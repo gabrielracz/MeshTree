@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <exception>
 
@@ -8,7 +7,8 @@
 #include "mesh.h"
 #include "shader.h"
 
-void CheckControls(KeyMap& keys, Camera& camera);
+void CheckControls(KeyMap& keys, View& view, Camera& camera);
+void MouseControls(Camera& camera, MouseMap& mouse_buttons, Mouse& mouse);
 
 int main(void){
 
@@ -27,8 +27,15 @@ int main(void){
     camera.Attach(&bunny_transform);
     light.Attach(&camera.transform);
 
+    MouseMap& mouse_buttons = view.GetMouseButtons();
+
+    auto mouse_controls = [&camera, &mouse_buttons](Mouse& mouse) {
+        MouseControls(camera, mouse_buttons, mouse);
+    };
+    view.SetMouseHandler(mouse_controls);
+
     while(!view.Closed()) {
-        CheckControls(view.GetKeys(), camera);
+        CheckControls(view.GetKeys(), view, camera);
 
         view.Clear();
         camera.Update();
@@ -39,10 +46,13 @@ int main(void){
     return 0;
 }
 
-void CheckControls(KeyMap& keys, Camera& camera) {
+void CheckControls(KeyMap& keys, View& view, Camera& camera) {
+    if(keys[GLFW_KEY_Q]) {
+        view.ToggleMouseCapture();
+        keys[GLFW_KEY_Q] = false;
+    }
 
-    float orbit = 0.015f;
-    glm::quat camera_ori = glm::inverse(glm::mat4_cast(camera.transform.GetOrientation()));
+    float orbit = 0.02f;
     if(keys[GLFW_KEY_A]) {
         camera.OrbitYaw(-orbit);
     }
@@ -54,5 +64,14 @@ void CheckControls(KeyMap& keys, Camera& camera) {
     }
     if(keys[GLFW_KEY_S]) {
         camera.OrbitPitch(orbit);
+    }
+}
+
+void MouseControls(Camera& camera, MouseMap& buttons,  Mouse& mouse) {
+    float mouse_sens = -0.003f;
+	glm::vec2 look = mouse.move * mouse_sens;
+    if(buttons[GLFW_MOUSE_BUTTON_1]) {
+        camera.OrbitYaw(-look.x);
+        camera.OrbitPitch(-look.y);
     }
 }

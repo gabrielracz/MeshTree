@@ -63,6 +63,7 @@ public:
 
     KeyMap &GetKeys() { return key_controls; }
     Mouse &GetMouse() { return mouse; }
+    MouseMap& GetMouseButtons() {return mouse_buttons;}
     Camera &GetCamera() { return camera; }
 
     int GetWidth() { return win.width; }
@@ -77,6 +78,8 @@ private:
     Camera camera;
     Mouse mouse;
     KeyMap key_controls;
+    MouseMap mouse_buttons;
+
 
     int render_mode = RenderMode::FILL;
 
@@ -89,6 +92,7 @@ private:
     static void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
     static void ResizeCallback(GLFWwindow *window, int width, int height);
     static void MouseMoveCallback(GLFWwindow *window, double xpos, double ypos);
+    static void MouseButtonCallback(GLFWwindow *window, int key, int action, int mods);
 
     std::function<void(Mouse &mouse)> mouse_handler;
 };

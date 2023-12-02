@@ -17,6 +17,7 @@ const unsigned int window_height_g = 960;
 const bool window_full_screen_g = false;
 
 typedef std::unordered_map<int, bool> KeyMap;
+typedef std::unordered_map<int, bool> MouseMap;
 
 struct Mouse {
     bool first_captured = true;

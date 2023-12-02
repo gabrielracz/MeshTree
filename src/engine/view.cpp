@@ -93,6 +93,8 @@ void View::InitEventHandlers(void){
     glfwSetKeyCallback(win.ptr, KeyCallback);
     glfwSetFramebufferSizeCallback(win.ptr, ResizeCallback);
     glfwSetCursorPosCallback(win.ptr, MouseMoveCallback);
+	glfwSetMouseButtonCallback(win.ptr, MouseButtonCallback);
+
 
     // Set pointer to game object, so that callbacks can access it
     glfwSetWindowUserPointer(win.ptr, (void *) this);
@@ -107,6 +109,10 @@ void View::InitControls() {
 
     for(int key = GLFW_KEY_SPACE; key < GLFW_KEY_LAST; key++) {
         key_controls.insert({key, false});
+    }
+
+    for(int button = GLFW_MOUSE_BUTTON_1; button < GLFW_MOUSE_BUTTON_LAST; button++) {
+        key_controls.insert({button, false});
     }
 }
 
@@ -177,6 +183,18 @@ void View::MouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
     if(view->mouse_handler) {
         view->mouse_handler(mouse);
     }
+}
+
+void View::MouseButtonCallback(GLFWwindow* window, int key, int action, int mods) {
+
+    void* ptr = glfwGetWindowUserPointer(window);
+    View *view = (View *) ptr;
+
+	if(action == GLFW_PRESS) {
+		view->mouse_buttons[key] = true;
+	}else if(action == GLFW_RELEASE) {
+		view->mouse_buttons[key] = false;
+	}
 }
 
 
