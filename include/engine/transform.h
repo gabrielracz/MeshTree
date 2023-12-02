@@ -56,6 +56,8 @@ public:
     void SetScale(const glm::vec3& newscale) { scale = newscale; dirty = true;} 
     void SetOrientation(const glm::quat& newori) { orientation = newori; dirty = true;} 
     void SetAxis(Axis a, const glm::vec3& v ) {axes[a] = v;}
+    void SetJoint(const glm::vec3& j) { joint = j;}
+    void SetOrbit(const glm::quat& o) {orbit = o;}
 
     const glm::mat4 GetLocalMatrix() {return CalculateMatrix();}
     const glm::mat4& GetWorldMatrix() const {return transf_world;}

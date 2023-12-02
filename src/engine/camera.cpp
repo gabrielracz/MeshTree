@@ -1,5 +1,6 @@
 #include "defines.h"
 #include "glm/ext/matrix_transform.hpp"
+#include "glm/trigonometric.hpp"
 #include "transform.h"
 #include <glm/ext/quaternion_trigonometric.hpp>
 #include <stdexcept>
@@ -30,6 +31,13 @@ void Camera::Update() {
     } else {
         transform.Update();
     }
+
+    float distance = glm::length(original_pos);
+    float x = distance * glm::cos(orbit_pitch) * glm::cos(orbit_yaw);
+    float y = distance * glm::sin(orbit_pitch);
+    float z = distance * glm::cos(orbit_pitch) * glm::sin(orbit_yaw);
+    transform.SetPosition({x,y,z});
+
     SetupViewMatrix();
 }
 
@@ -73,12 +81,15 @@ void Camera::SetProjectionUniforms(Shader& shd, Projection projtype){
 void Camera::SetupViewMatrix(void){
 
     if(parent_transform) {
-        glm::mat4 p = parent_transform->GetWorldMatrix();
-        glm::vec3 eye = transform.GetWorldPosition();
-        // glm::vec3 look_at = p * glm::vec4(0.0, 0.0, -2.0, 1.0); // look slightly ahead of target
-        glm::vec3 look_at = p * transform.GetLocalMatrix() * glm::vec4(0.0, 0.0, -1.0, 1.0);
-        glm::vec3 side = transform.GetWorldMatrix() * glm::vec4(transform.GetAxis(SIDE), 0.0f);
-        glm::vec3 up = glm::cross(side, glm::vec3(p * glm::vec4(0.0, 0.0, -2.0, 0.0)));
+        glm::mat4 p = parent_transform->GetLocalMatrix();
+        glm::mat4 tr = transform.GetLocalMatrix();
+        glm::vec3 eye = p * tr * glm::vec4(0.0, 0.0, 0.0, 1.0f);
+        glm::vec3 look_at = p * glm::vec4(0.0, 0.0, 0.0, 1.0); // look slightly ahead of target
+        // glm::vec3 look_at = p * transform.GetLocalMatrix() * glm::vec4(0.0, 0.0, -1.0, 1.0);
+        glm::vec3 side = p * tr * glm::vec4(transform.GetAxis(SIDE), 0.0f);
+        // glm::vec3 up = glm::cross(side, glm::vec3(p * glm::vec4(0.0, 0.0, -2.0, 0.0)));
+        // glm::vec3 up = glm::cross(side, transform.GetAxis(FORWARD));
+        glm::vec3 up = transform.GetAxis(UP);
         view_matrix_ = glm::lookAt(eye, look_at, up);
     } else {
         glm::vec3 eye = transform.GetPosition();
@@ -127,4 +138,16 @@ void Camera::Drop() {
 void Camera::MoveTo(const glm::vec3 newpos) {
     transform.SetPosition(newpos);
     SetupViewMatrix();
+}
+
+void Camera::OrbitPitch(float pitch) {
+    float newpitch = orbit_pitch + pitch;
+    if(newpitch + pitch > -PI/2.0f && newpitch + pitch < PI/2.0f) {
+        orbit_pitch = newpitch;
+    }
+}
+
+void Camera::OrbitYaw(float yaw) {
+    float newyaw = orbit_yaw + yaw;
+    orbit_yaw = newyaw;
 }

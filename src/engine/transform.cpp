@@ -26,8 +26,9 @@ void Transform::Rotate(const glm::quat& rot) {
 }
 
 void Transform::RotateOrbit(const glm::quat& rot) {
-    orbit = orbit * rot;
-    orbit = glm::normalize(orientation);
+    // orbit = orbit * rot;
+    orbit = rot* orbit;
+    orbit = glm::normalize(orbit);
     dirty = true;
 }
 

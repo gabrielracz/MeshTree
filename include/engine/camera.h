@@ -41,12 +41,18 @@ class Camera {
         void SetupViewMatrix(void);
         const glm::mat4& GetViewMatrix() {return view_matrix_;}
 
+        void OrbitPitch(float pitch);
+        void OrbitYaw(float yaw);
+
         float pitch_speed = 0.0f;
         float yaw_speed = 0.0f;
         float roll_speed = 0.0f;
         glm::vec3 angular_velocity {0.0f, 0.0f, 0.0f};
         glm::vec3 velocity {0.0f, 0.0f, 0.0f};
         bool locked = false;
+
+        float orbit_yaw = 0.0;
+        float orbit_pitch = 0.0;
 
         Transform transform; 
     private:
