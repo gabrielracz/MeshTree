@@ -1,0 +1,6 @@
+build/
+.cache/
+.vscode/
+include/engine/path_config.h
+compile_commands.json
+
