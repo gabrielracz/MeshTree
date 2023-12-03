@@ -45,7 +45,8 @@ vec4 lighting(vec4 pixel) {
     float spec = blinnphong_specular(lv, n);
     // float spec = phong_specular(lv, n);
 		
-    return diffuse*light_col*pixel + amb*ambcol*pixel + spec*light_col;
+    // return diffuse*light_col*pixel + amb*ambcol*pixel + spec*light_col;
+    return diffuse*light_col*pixel + amb*ambcol*pixel;
 }
 void main() 
 {

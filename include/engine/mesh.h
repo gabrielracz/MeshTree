@@ -59,6 +59,8 @@ class Mesh {
 	public:
 		std::vector<float> vertices;
 		std::vector<unsigned int> indices;
+
+        std::vector<glm::vec3> vertex_vectors;
 		// std::vector<Texture> textures;
 		Layout layout;
 
@@ -68,6 +70,9 @@ class Mesh {
 		// Mesh(std::vector<Vertex> verts, std::vector<unsigned int> inds, std::vector<Texture> textures, Layout = default_layout);
 		Mesh(const float* verts, size_t num_verts, const unsigned int* indices, size_t num_indices, Layout = default_layout);
 		void Draw();
+
+        std::vector<glm::vec3>& GetVertices() {return vertex_vectors;}
+        std::vector<unsigned int>& GetIndices() {return indices;}
 
 	private:
 		unsigned int VBO, EBO, VAO;

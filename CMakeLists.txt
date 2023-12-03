@@ -19,6 +19,9 @@ set(HDRS
     include/engine/random.h
     include/engine/defines.h
     include/engine/light.h
+
+    include/meshtree/structures.h
+    include/meshtree/kdtree.h
 )
  
 set(SRCS
@@ -31,6 +34,8 @@ set(SRCS
     src/engine/texture.cpp
     src/engine/random.cpp 
     src/engine/light.cpp
+
+    src/meshtree/kdtree.cpp
 )
 
 # Add path name to configuration file
@@ -43,7 +48,7 @@ add_executable(${PROJ_NAME} ${HDRS} ${SRCS})
 add_definitions(${COMPILER_FLAGS})
 
 target_include_directories(${PROJ_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/engine)
-target_include_directories(${PROJ_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/lib)
+target_include_directories(${PROJ_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/meshtree)
 
 # Require OpenGL library
 find_package(OpenGL REQUIRED)

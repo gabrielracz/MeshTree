@@ -1,17 +1,22 @@
 #include <iostream>
 #include <exception>
 
-#include "glm/ext/quaternion_trigonometric.hpp"
+// rendering engine
 #include "path_config.h"
 #include "view.h"
 #include "mesh.h"
 #include "shader.h"
+
+// MeshTree
+#include "structures.h"
+#include "kdtree.h"
 
 void CheckControls(KeyMap& keys, View& view, Camera& camera);
 void MouseControls(Camera& camera, MouseMap& mouse_buttons, Mouse& mouse);
 
 int main(void){
 
+    // RENDERING
     View view;
     view.Init("[] MeshTree - Gabriel Racz (c)", 800, 800);
 
@@ -25,6 +30,7 @@ int main(void){
     Camera& camera = view.GetCamera();
     camera.transform.SetJoint(-config::camera_position);
     camera.Attach(&bunny_transform);
+    camera.OrbitYaw(PI/4.0f);
     light.Attach(&camera.transform);
 
     MouseMap& mouse_buttons = view.GetMouseButtons();
@@ -33,6 +39,17 @@ int main(void){
         MouseControls(camera, mouse_buttons, mouse);
     };
     view.SetMouseHandler(mouse_controls);
+
+    // MESHTREE
+    std::vector<Triangle>     triangles;
+    std::vector<glm::vec3>    vertices = bunny_mesh.GetVertices();
+    std::vector<unsigned int> indices = bunny_mesh.GetIndices();
+    for(int i = 0; i < indices.size() - 2; i += 3) {
+        triangles.emplace_back(Triangle({vertices[i], vertices[i+1], vertices[i+2]}));
+    } 
+
+    KDTree kdtree(triangles);
+    kdtree.Build(1, 1);
 
     while(!view.Closed()) {
         CheckControls(view.GetKeys(), view, camera);
@@ -64,6 +81,11 @@ void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     }
     if(keys[GLFW_KEY_S]) {
         camera.OrbitPitch(orbit);
+    }
+    
+    if(keys[GLFW_KEY_E]) {
+        view.ToggleRenderMode();
+        keys[GLFW_KEY_E] = false;
     }
 }
 

@@ -24,9 +24,9 @@ Layout::Layout(std::initializer_list<LayoutEntry> ents)
 Mesh::Mesh(const std::string& obj_file_path)
 {
 
-    std::vector<std::array<float, 3>> verts;
-    std::vector<std::array<float ,2>> uvs;
-    std::vector<std::array<float, 3>> normals;
+    std::vector<glm::vec3> verts;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals;
 
     std::ifstream obj_file (obj_file_path);
 	if (obj_file.fail()) {
@@ -40,18 +40,18 @@ Mesh::Mesh(const std::string& obj_file_path)
         std::string word;
         l >> word;
         if(word == "v") {
-            std::array<float, 3> v = {};
+            glm::vec3 v = {};
             l >> v[0];
             l >> v[1];
             l >> v[2];
             verts.push_back(v);
         }else if(word == "vt") {
-            std::array<float, 2> vt = {};
+            glm::vec2 vt = {};
             l >> vt[0];
             l >> vt[1];
             uvs.push_back(vt);
         }else if(word == "vn") {
-            std::array<float, 3> n = {};
+            glm::vec3 n = {};
             l >> n[0];
             l >> n[1];
             l >> n[2];
@@ -113,6 +113,7 @@ Mesh::Mesh(const std::string& obj_file_path)
         {FLOAT3, "color"},
         {FLOAT2, "uv"},
     });
+    vertex_vectors = verts;
     SetupBuffers();
 }
 
