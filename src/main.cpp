@@ -13,7 +13,7 @@
 
 void CheckControls(KeyMap& keys, View& view, Camera& camera);
 void MouseControls(Camera& camera, MouseMap& mouse_buttons, Mouse& mouse);
-void RenderKDTree(View& view, Shader& shader, KDTree& tree);
+void RenderKDTree(View& view, Shader& shader, KDNode* tree);
 
 
 int main(void){
@@ -54,7 +54,7 @@ int main(void){
     } 
 
     KDTree kdtree(triangles);
-    kdtree.Build(1, 1);
+    kdtree.Build(12, 1);
 
     while(!view.Closed()) {
         CheckControls(view.GetKeys(), view, camera);
@@ -62,16 +62,20 @@ int main(void){
         view.Clear();
         camera.Update();
         view.RenderObj(bunny_transform, bunny_mesh, shader, light);
-        RenderKDTree(view, box_shader, kdtree);
+        RenderKDTree(view, box_shader, &kdtree.GetTree());
         view.Update();
     }
 
     return 0;
 }
 
-void RenderKDTree(View& view, Shader& shader, KDTree& tree) {
-    KDNode& root = tree.GetTree();
-    view.RenderBox(shader, root.bounds.min, root.bounds.max, {1.0, 1.0, 1.0, 0.1});
+void RenderKDTree(View& view, Shader& shader, KDNode* node) {
+    if(node == nullptr) {
+        return;
+    }
+    view.RenderBox(shader, node->aabb.min, node->aabb.max, {1.0, 1.0, 1.0, 0.005});
+    RenderKDTree(view, shader, node->left_child);
+    RenderKDTree(view, shader, node->right_child);
 }
 
 void CheckControls(KeyMap& keys, View& view, Camera& camera) {

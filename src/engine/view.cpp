@@ -217,7 +217,7 @@ void View::RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec
     const static Mesh cube(vertices, {}, layout);
 
     glm::vec3 box_position = (min_extent + max_extent)/2.0f;
-    glm::vec3 box_scale =   (abs(max_extent) + abs(min_extent));
+    glm::vec3 box_scale =   abs(max_extent - min_extent);
     Transform box_transform;
     box_transform.SetPosition(box_position);
     box_transform.SetScale(box_scale);

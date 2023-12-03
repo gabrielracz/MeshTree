@@ -36,7 +36,6 @@ class View
     {
         FILL = 0,
         WIREFRAME,
-        POINTS,
         NUM_RENDERMODES
     };
 

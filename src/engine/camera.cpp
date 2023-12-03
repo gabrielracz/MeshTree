@@ -86,15 +86,15 @@ void Camera::SetupViewMatrix(void){
         glm::vec3 eye = p * tr * glm::vec4(0.0, 0.0, 0.0, 1.0f);
         glm::vec3 look_at = p * glm::vec4(0.0, 0.0, 0.0, 1.0); // look slightly ahead of target
         // glm::vec3 look_at = p * transform.GetLocalMatrix() * glm::vec4(0.0, 0.0, -1.0, 1.0);
-        glm::vec3 side = p * tr * glm::vec4(transform.GetAxis(SIDE), 0.0f);
+        glm::vec3 side = p * tr * glm::vec4(transform.GetAxis(Transform::SIDE), 0.0f);
         // glm::vec3 up = glm::cross(side, glm::vec3(p * glm::vec4(0.0, 0.0, -2.0, 0.0)));
         // glm::vec3 up = glm::cross(side, transform.GetAxis(FORWARD));
-        glm::vec3 up = transform.GetAxis(UP);
+        glm::vec3 up = transform.GetAxis(Transform::UP);
         view_matrix_ = glm::lookAt(eye, look_at, up);
     } else {
         glm::vec3 eye = transform.GetPosition();
         glm::vec3 look_at = transform.GetLocalMatrix() * glm::vec4(0.0, 0.0, -1.0, 1.0);
-        glm::vec3 up = transform.LocalAxis(UP);
+        glm::vec3 up = transform.LocalAxis(Transform::UP);
         view_matrix_ = glm::lookAt(eye, look_at, up);
     }
 }

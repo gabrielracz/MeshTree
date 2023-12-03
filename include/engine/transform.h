@@ -9,11 +9,6 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-typedef enum {
-    SIDE = 0,
-    UP = 1,
-    FORWARD = 2
-} Axis;
 
 class Transform { 
 private:
@@ -36,6 +31,13 @@ private:
     bool dirty = true;
 
 public:
+
+    typedef enum {
+        SIDE = 0,
+        UP = 1,
+        FORWARD = 2
+    } Axis;
+
     Transform() = default;
     Transform(const glm::vec3& p, const glm::quat o, const glm::vec3& s)
         : position(s), orientation(o), scale(s) {Update();}
