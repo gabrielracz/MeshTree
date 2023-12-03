@@ -52,5 +52,6 @@ void main()
 {
     vec4 pixel = color_interp;
     vec4 lit_pixel = lighting(pixel);
+    lit_pixel.a = 1.0;
    gl_FragColor =  lit_pixel;
 }

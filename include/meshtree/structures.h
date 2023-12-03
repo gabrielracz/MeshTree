@@ -4,6 +4,8 @@
 #include <initializer_list>
 #include <array>
 
+#define INF std::numeric_limits<float>::infinity()
+
 struct Triangle {
     std::array<glm::vec3, 3> vertices = {};
     glm::vec3 centroid = {};
@@ -13,6 +15,8 @@ struct Triangle {
 struct AABB {
     glm::vec3 min;
     glm::vec3 max;
+    AABB(): min(-INF), max(INF) {}
+    AABB(const glm::vec3& min, const glm::vec3& max) : min(min), max(max) {}
 };
 
 struct Ray {

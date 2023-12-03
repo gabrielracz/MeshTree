@@ -103,6 +103,8 @@ Mesh::Mesh(const std::string& obj_file_path)
                 vertices.push_back(uv_selected.x);
                 vertices.push_back(uv_selected.y);
                 indices.push_back(f_count++);
+
+                direct_indices.push_back(v_ix);
             }
         }
     }
@@ -171,7 +173,7 @@ void Mesh::SetupBuffers() {
 	glBindVertexArray(0);
 }
 
-void Mesh::Draw() {
+void Mesh::Draw() const {
 	//potential check if shader is already in use to avoid call
 	// shader.use();
 
@@ -179,7 +181,8 @@ void Mesh::Draw() {
 	if(indices.size() > 0) {
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	} else {
-		glDrawArrays(GL_POINTS, 0, vertices.size());
+		// glDrawArrays(GL_POINTS, 0, vertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, vertices.size()/3);
 	}
 
 	glBindVertexArray(0);

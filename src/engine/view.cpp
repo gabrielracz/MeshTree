@@ -72,9 +72,11 @@ void View::InitWindow(const std::string& title, int width, int height) {
 void View::InitView(){
 
     // Set up z-buffer
+    glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_DITHER);
-    glDepthFunc(GL_LESS);
+    // glEnable(GL_CULL_FACE);
 
 	//Use this to disable vsync
 	// glfwSwapInterval(0);
@@ -118,7 +120,6 @@ void View::InitControls() {
 
 void View::RenderObj(Transform &transform, Mesh &mesh, Shader &shader, Light& light) {
     shader.Use();
-
     // camera
     camera.SetProjectionUniforms(shader);
     glm::mat4 view_matrix = camera.GetViewMatrix();
@@ -134,6 +135,108 @@ void View::RenderObj(Transform &transform, Mesh &mesh, Shader &shader, Light& li
 
     mesh.Draw();
 }
+
+void View::RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec3& max_extent, const glm::vec4 color) {
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    const std::vector<float> cube_vertices = {
+    // Vertices
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  // Vertex 0
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  // Vertex 1
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  // Vertex 2
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  // Vertex 3
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // Vertex 4
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  // Vertex 5
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  // Vertex 6
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f   // Vertex 7
+    };
+
+    const std::vector<unsigned int> cube_indices = {
+        // Indices
+        0, 1, 2,  // Front face
+        2, 3, 0,
+        1, 5, 6,  // Right face
+        6, 2, 1,
+        7, 6, 5,  // Top face
+        5, 4, 7,
+        4, 0, 3,  // Left face
+        3, 7, 4,
+        4, 5, 1,  // Bottom face
+        1, 0, 4,
+        3, 2, 6,  // Back face
+        6, 7, 3
+    };
+
+    const std::vector<float> vertices = {
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
+
+    Layout layout({{FLOAT3, "position"}, {FLOAT2, "uv"}});
+    const static Mesh cube(vertices, {}, layout);
+
+    glm::vec3 box_position = (min_extent + max_extent)/2.0f;
+    glm::vec3 box_scale =   (abs(max_extent) + abs(min_extent));
+    Transform box_transform;
+    box_transform.SetPosition(box_position);
+    box_transform.SetScale(box_scale);
+
+    shader.Use();
+    // camera
+    camera.SetProjectionUniforms(shader);
+    glm::mat4 view_matrix = camera.GetViewMatrix();
+
+    // model 
+    glm::mat4 world = box_transform.GetLocalMatrix();
+    shader.SetUniform4m(world, "world_mat");
+
+    shader.SetUniform4f(color, "color");
+
+    cube.Draw();
+    glDepthMask(GL_TRUE);
+}
+
 
 
 
