@@ -118,7 +118,7 @@ void View::InitControls() {
     }
 }
 
-void View::RenderObj(Transform &transform, Mesh &mesh, Shader &shader, Light& light) {
+void View::RenderObj(Transform &transform, Mesh &mesh, Shader &shader, Light& light, int highlighted_vertex) { 
     shader.Use();
     // camera
     camera.SetProjectionUniforms(shader);
@@ -129,6 +129,7 @@ void View::RenderObj(Transform &transform, Mesh &mesh, Shader &shader, Light& li
     glm::mat4 normal_matrix = glm::transpose(glm::inverse(view_matrix * world));
     shader.SetUniform4m(world, "world_mat");
     shader.SetUniform4m(normal_matrix, "normal_mat");
+    shader.SetUniform1i(highlighted_vertex, "highlighted");
 
     // light
     light.SetUniforms(shader);
@@ -237,13 +238,15 @@ void View::RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec
     glDepthMask(GL_TRUE);
 }
 
-void View::RenderLine(Mesh& line, Shader& shader, const glm::vec3& origin, const glm::vec3& direction, const glm::vec4& color) {
-    glBindVertexArray(line.VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, line.VBO);
+void View::RenderLine(Mesh& line_mesh, Shader& shader, const glm::vec3& origin, const glm::vec3& direction, const glm::vec4& color) {
+    glBindVertexArray(line_mesh.VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, line_mesh.VBO);
+
+    glm::vec3 line = origin + direction;
 
     float line_verts[] = {
             origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z
+            line.x, line.y, line.z
     };
 
     glBufferSubData(GL_ARRAY_BUFFER, 0, 6*sizeof(float), line_verts);

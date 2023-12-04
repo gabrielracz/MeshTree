@@ -1,6 +1,6 @@
 // Material with no illumination simulation
 
-#version 330 core
+#version 410
 
 layout (location = 0) in vec3 vertex;
 layout (location = 1) in vec3 normal;
@@ -13,6 +13,7 @@ uniform mat4 view_mat;
 uniform mat4 projection_mat;
 uniform mat4 normal_mat;
 uniform vec3 light_pos_world;
+// uniform int highlighted_vertex;
 
 // Attributes forwarded to the fragment shader
 out vec3 position_interp;
@@ -20,6 +21,7 @@ out vec3 normal_interp;
 out vec4 color_interp;
 out vec2 uv_interp;
 out vec3 light_pos;
+// flat out int highlighted;
 
 
 void main()
@@ -32,4 +34,6 @@ void main()
     uv_interp = uv;
 
     light_pos = vec3(view_mat * vec4(light_pos_world, 1.0));
+    // highlighted = (gl_PrimitiveID == highlighted_vertex) ? 1 : 0;
+
 }

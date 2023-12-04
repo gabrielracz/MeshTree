@@ -25,6 +25,8 @@ KDTree* tree = nullptr;
 int tree_depth = 1;
 int max_elements = 1;
 bool render_obj = true;
+int hit_triangle = -1;
+Ray ray;
 
 int main(void){
 
@@ -70,10 +72,21 @@ int main(void){
     kdtree.Build(0, 1);
     tree = &kdtree;
 
-    Ray ray;
-    ray.origin = {5.0, 5.0, 5.0};
-    ray.direction = {-0.577, -0.577, -0.577};
+    ray.origin = {-1.0, 0.0, 3.0};
+    // ray.direction = glm::normalize(glm::vec3{-0.4, -0.577, -0.577});
+    ray.direction = glm::normalize(glm::vec3(0.0, 0.0, -1.0));
     ray.tmax = 10.0f;
+
+    Intersection intersection;
+    // if(kdtree.RayIntersect(ray, &intersection)) {
+    //     glm::vec3 point = ray.direction * intersection.t0;
+    //     std::cout << glm::to_string(point) << std::endl;
+    //     view.RenderLine(line_mesh, line_shader, ray.origin, point, {1.0, 0.0, 0.0, 1.0});
+    //     hit_triangle = intersection.triangle_id;
+    //     std::cout << intersection.triangle_id << " " << intersection.t0 << std::endl;
+    // } else {
+    //     view.RenderLine(line_mesh, line_shader, ray.origin, ray.direction * ray.tmax, {1.0, 0.0, 0.0, 1.0});
+    // }
 
     while(!view.Closed()) {
         CheckControls(view.GetKeys(), view, camera);
@@ -81,18 +94,21 @@ int main(void){
         view.Clear();
         camera.Update();
         if(render_obj) {
-            view.RenderObj(bunny_transform, bunny_mesh, shader, light);
+            view.RenderObj(bunny_transform, bunny_mesh, shader, light, hit_triangle);
         }
 
         Intersection intersection;
         if(kdtree.RayIntersect(ray, &intersection)) {
-            // ray.tmax = intersection.t0;
-            // std::cout << intersection.t0 << " " << intersection.t1 << std::endl;
-            glm::vec3 point = ray.origin + (ray.direction * intersection.t0);
+            glm::vec3 point = ray.direction * intersection.t0;
+            // std::cout << glm::to_string(point) << std::endl;
             view.RenderLine(line_mesh, line_shader, ray.origin, point, {1.0, 0.0, 0.0, 1.0});
+            hit_triangle = intersection.triangle_id;
+            // std::cout << intersection.triangle_id << " " << intersection.t0 << std::endl;
+        } else {
+            view.RenderLine(line_mesh, line_shader, ray.origin, ray.direction * ray.tmax, {1.0, 0.0, 0.0, 1.0});
         }
+        view.RenderLine(line_mesh, line_shader, ray.origin, ray.direction * ray.tmax, {1.0, 0.0, 0.0, 1.0});
 
-        // RenderRay(view, line_mesh, line_shader, ray);
         RenderKDTree(view, box_shader, &kdtree.GetTree());
         view.Update();
     }
@@ -132,12 +148,25 @@ void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     if(keys[GLFW_KEY_S]) {
         camera.OrbitPitch(orbit);
     }
+
+    float ray_move = 0.01f;
+    if(keys[GLFW_KEY_UP]) {
+        ray.origin += glm::vec3(0.0, ray_move, 0.0);
+    }
+    if(keys[GLFW_KEY_DOWN]) {
+        ray.origin += glm::vec3(0.0, -ray_move, 0.0);
+    }
+    if(keys[GLFW_KEY_LEFT]) {
+        ray.origin += glm::vec3(-ray_move, 0.0, 0.0);
+    }
+    if(keys[GLFW_KEY_RIGHT]) {
+        ray.origin += glm::vec3(ray_move, 0.0, 0.0);
+    }
     
     if(keys[GLFW_KEY_E]) {
         view.ToggleRenderMode();
         keys[GLFW_KEY_E] = false;
     }
-
     if(keys[GLFW_KEY_T]) {
         tree_depth = glm::clamp(++tree_depth, 0, 20);
         tree->Build(tree_depth, max_elements);

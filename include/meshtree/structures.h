@@ -1,6 +1,7 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 #include <glm/glm.hpp>
+#include <glm/gtx/intersect.hpp>
 #include <iostream>
 #include <initializer_list>
 #include <array>
@@ -15,6 +16,11 @@ enum Axis {
     ZAXIS = 2
 };
 
+struct Ray {
+    glm::vec3 origin {};
+    glm::vec3 direction {};
+    float tmax = 0.0f; // maximum time along the direction
+};
 
 struct Triangle {
     std::array<glm::vec3, 3> vertices = {};
@@ -48,13 +54,22 @@ struct Triangle {
 
         return glm::abs(max[axis] - min[axis]);
     }
-};
 
+    bool Intersect(Ray& ray, float* t0) {
+        glm::vec2 barycentricCoords;
+        float t = 0;
+        
+        bool intersects = glm::intersectRayTriangle(ray.origin, ray.direction, vertices[0], vertices[1], vertices[2], barycentricCoords, t);
 
-struct Ray {
-    glm::vec3 origin {};
-    glm::vec3 direction {};
-    float tmax = 0.0f; // maximum time along the direction
+        bool within_triangle = intersects && (barycentricCoords.x >= 0.0f) && (barycentricCoords.y >= 0.0f) &&
+            ((barycentricCoords.x + barycentricCoords.y) <= 1.0f);
+        
+        if(within_triangle) {
+            *t0 = t;
+        }
+        
+        return within_triangle;
+    }
 };
 
 struct AABB {
@@ -72,6 +87,7 @@ struct AABB {
             float invRayDir = 1 / ray.direction[i];
             float tNear = (min[i] - ray.origin[i]) * invRayDir;
             float tFar = (max[i] - ray.origin[i]) * invRayDir;
+            // std::cout << tNear << " " << tFar << std::endl;
 
             // Update parametric interval from slab intersection $t$ values
             if (tNear > tFar) std::swap(tNear, tFar);

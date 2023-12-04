@@ -4,8 +4,10 @@
 #include <unordered_map>
 #include "structures.h"
 
+const int INTERIOR_NODE = 0;
+
 struct KDNode {
-    int leaf_id = 0;
+    int leaf_id = INTERIOR_NODE;
     AABB aabb;
     KDNode* right_child = nullptr;
     KDNode* left_child = nullptr;
@@ -21,6 +23,7 @@ public:
 
 private:
     void BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::vector<int> tri_indices, int current_depth);
+    bool RayTraverse(KDNode& node, Ray& ray, Intersection* intersection);
     int GetLeafID();
     static float SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* axis);
 

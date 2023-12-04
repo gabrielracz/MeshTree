@@ -168,15 +168,87 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
 bool KDTree::RayIntersect(Ray &ray, Intersection* intersect) {
     float t0, t1;
     KDNode& root = nodes[0];
-    if(root.aabb.Intersect(ray, &t0, &t1)) {
-        intersect->t0 = t0;
-        intersect->t1 = t1;
+
+    bool hit_root_box = root.aabb.Intersect(ray, &t0, &t1);
+    if(!hit_root_box) {
+        return false;
+    }
+    std::cout << "hit root" << std::endl;
+    return RayTraverse(root, ray, intersect);
+}
+
+bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
+    // Check leaf node 
+    if(node.leaf_id != INTERIOR_NODE) {
+        float time = 0.0;
+        float min_time = INF;
+        int earliest_triangle = 0;
+        std::vector<int> contained_tri_indices = leaf_triangle_map[node.leaf_id];
+        for(int i : contained_tri_indices) {
+            if(triangles[i].Intersect(ray, &time) && time < min_time) {
+                min_time = time;
+                earliest_triangle = i;
+            }
+        }
+
+        if(min_time == INF) {   // either contains no triangles or the ray hit none of them
+            return false;
+        }
+
+        intersect->triangle_id = earliest_triangle;
+        intersect->t0 = min_time;
         return true;
-    } else {
+    }
+
+    // Descend interior node children
+    // Check against their bounding boxes
+    float tleft0 = 0.0, tleft1, tright0, tright1 = 0.0;
+    bool left_hit = false, right_hit = false;
+    if(node.left_child != nullptr) {
+        left_hit = node.left_child->aabb.Intersect(ray, &tleft0, &tleft1);
+        std::cout << "hit left" << std::endl;
+    }
+    if(node.right_child != nullptr) {
+        right_hit = node.right_child->aabb.Intersect(ray, &tright0, &tright1);
+        std::cout << "hit right" << std::endl;
+    }
+    std::cout << std::endl;
+
+    if(!left_hit && !right_hit) { // neither child was hit, nothing to do here.
         return false;
     }
 
+    // Find the node that was hit first
+    KDNode* first = nullptr;
+    KDNode* second = nullptr;
+
+    if(left_hit && right_hit) { // both children hit, traverse the smaller one first.
+        if(tleft0 < tright0) {
+            first = node.left_child;
+            second = node.right_child;
+        } else {
+            first = node.right_child;
+            second = node.left_child;
+        }
+    } else if (left_hit) {
+        first = node.left_child;
+    } else {                   // we made sure at least one was hit above
+        first = node.right_child;
+    }
+
+    if(RayTraverse(*first, ray, intersect)) {
+        return true;
+    } else {
+        if(second != nullptr) {
+            return RayTraverse(*second, ray, intersect);
+        }
+    }
+    // unreachable
+    return false;
 }
+
+
+
 
 Axis KDTree::GetLargestAxis(AABB& aabb) {
     glm::vec3 diff = glm::abs(aabb.max - aabb.min);

@@ -1,4 +1,4 @@
-#version 130
+#version 410
 
 // Attributes passed from the vertex shader
 in vec3 position_interp;
@@ -6,6 +6,7 @@ in vec3 normal_interp;
 in vec4 color_interp;
 // in vec2 uv_interp;
 in vec3 light_pos;
+// flat in int highlighted;
 
 // Uniform (global) buffer
 uniform sampler2D texture_map;
@@ -14,6 +15,8 @@ uniform float spec_power;
 uniform float amb;
 uniform vec4 ambcol;
 uniform float timer;
+uniform int highlighted;
+
 
 float phong_specular(vec3 lv, vec3 n) {
 	vec3 v = vec3(0,0,0);
@@ -50,8 +53,8 @@ vec4 lighting(vec4 pixel) {
 }
 void main() 
 {
-    vec4 pixel = color_interp;
+    vec4 pixel = (highlighted != gl_PrimitiveID) ? color_interp : vec4(1.0, 0.0, 0.0, 1.0);
     vec4 lit_pixel = lighting(pixel);
     lit_pixel.a = 1.0;
-   gl_FragColor =  lit_pixel;
+    gl_FragColor =  lit_pixel;
 }
