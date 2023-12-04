@@ -78,16 +78,15 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::
         // could be straddling, support adding to both
         if(left) {
             left_child_tris.push_back(t);
-            left_child_indices.push_back(i);
+            left_child_indices.push_back(tri_indices[i]);
 
         }
         if(right) {
             right_child_tris.push_back(t);
-            right_child_indices.push_back(i);
+            right_child_indices.push_back(tri_indices[i]);
         }
         i++;
     }
-
 
     KDNode* right_child = new KDNode();
     KDNode* left_child = new KDNode();
@@ -165,7 +164,9 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
     return best_split;
 }
 
+int t = 0;
 bool KDTree::RayIntersect(Ray &ray, Intersection* intersect) {
+    t = 0;
     float t0, t1;
     KDNode& root = nodes[0];
 
@@ -177,9 +178,12 @@ bool KDTree::RayIntersect(Ray &ray, Intersection* intersect) {
     return RayTraverse(root, ray, intersect);
 }
 
+
 bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
     // Check leaf node 
+    std::cout << t++ << std::endl;
     if(node.leaf_id != INTERIOR_NODE) {
+        std::cout << "testing leaf" << std::endl;
         float time = 0.0;
         float min_time = INF;
         int earliest_triangle = 0;
@@ -192,6 +196,7 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
         }
 
         if(min_time == INF) {   // either contains no triangles or the ray hit none of them
+            std::cout << "didn't find any" << std::endl;
             return false;
         }
 
@@ -206,24 +211,25 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
     bool left_hit = false, right_hit = false;
     if(node.left_child != nullptr) {
         left_hit = node.left_child->aabb.Intersect(ray, &tleft0, &tleft1);
-        std::cout << "hit left" << std::endl;
     }
     if(node.right_child != nullptr) {
         right_hit = node.right_child->aabb.Intersect(ray, &tright0, &tright1);
-        std::cout << "hit right" << std::endl;
     }
-    std::cout << std::endl;
 
     if(!left_hit && !right_hit) { // neither child was hit, nothing to do here.
         return false;
     }
+
+    float tleft = std::min(tleft0, tleft1);
+    float tright = std::min(tright0, tright1);
 
     // Find the node that was hit first
     KDNode* first = nullptr;
     KDNode* second = nullptr;
 
     if(left_hit && right_hit) { // both children hit, traverse the smaller one first.
-        if(tleft0 < tright0) {
+        std::cout << "hit both" << std::endl;
+        if(tleft < tright) {
             first = node.left_child;
             second = node.right_child;
         } else {
@@ -231,8 +237,10 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
             second = node.left_child;
         }
     } else if (left_hit) {
+        std::cout << "hit left" << std::endl;
         first = node.left_child;
     } else {                   // we made sure at least one was hit above
+        std::cout << "hit right" << std::endl;
         first = node.right_child;
     }
 
