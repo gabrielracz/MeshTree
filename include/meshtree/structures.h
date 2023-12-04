@@ -54,6 +54,8 @@ struct Triangle {
 struct AABB {
     glm::vec3 min;
     glm::vec3 max;
+    Axis split_axis = Axis::XAXIS;
+    float split_point = 0.0;
     AABB(): min(-INF), max(INF) {}
     AABB(const glm::vec3& min, const glm::vec3& max) : min(min), max(max) {}
 };

@@ -237,6 +237,25 @@ void View::RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec
     glDepthMask(GL_TRUE);
 }
 
+void View::RenderLine(Mesh& line, Shader& shader, const glm::vec3& origin, const glm::vec3& direction, const glm::vec4& color) {
+    glBindVertexArray(line.VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, line.VBO);
+
+    float line_verts[] = {
+            origin.x, origin.y, origin.z,
+            direction.x, direction.y, direction.z
+    };
+
+    glBufferSubData(GL_ARRAY_BUFFER, 0, 6*sizeof(float), line_verts);
+
+    shader.Use();
+    camera.SetProjectionUniforms(shader);
+    shader.SetUniform4f(color, "color");
+
+    glDrawArrays(GL_LINES, 0, 2);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 
 
 

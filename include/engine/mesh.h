@@ -62,6 +62,7 @@ class Mesh {
 
         std::vector<glm::vec3> vertex_vectors;
         std::vector<unsigned int> direct_indices;
+        GLenum draw_mode = GL_TRIANGLES;
 		// std::vector<Texture> textures;
 		Layout layout;
 
@@ -75,8 +76,8 @@ class Mesh {
         std::vector<glm::vec3>& GetVertices() {return vertex_vectors;}
         std::vector<unsigned int>& GetIndices() {return direct_indices;}
 
-	private:
 		unsigned int VBO, EBO, VAO;
+	private:
 
 		void SetupBuffers();
 		static size_t sz(LayoutEntry t);

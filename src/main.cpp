@@ -14,11 +14,16 @@
 void CheckControls(KeyMap& keys, View& view, Camera& camera);
 void MouseControls(Camera& camera, MouseMap& mouse_buttons, Mouse& mouse);
 void RenderKDTree(View& view, Shader& shader, KDNode* tree);
+void RenderRay(View& view, Mesh& line_mesh, Shader& line_shader, Ray& ray);
 
+const std::vector<float> line_verts = {
+    0.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f
+};
 
 KDTree* tree = nullptr;
 int tree_depth = 1;
-int max_elements = 10;
+int max_elements = 1;
 bool render_obj = true;
 
 int main(void){
@@ -32,6 +37,9 @@ int main(void){
     Transform bunny_transform;
 
     Shader box_shader(SHADER_DIRECTORY"/box_vp.glsl", SHADER_DIRECTORY"/box_fp.glsl");
+
+    Mesh line_mesh(line_verts, {}, {{FLOAT3, "position"}});
+    Shader line_shader(SHADER_DIRECTORY"/line_vp.glsl", SHADER_DIRECTORY"/line_fp.glsl");
 
     Light light({0.9, 0.9, 0.9, 1.0});
     light.transform.SetPosition({10.0, 10.0, 0.0});
@@ -62,13 +70,21 @@ int main(void){
     kdtree.Build(0, 1);
     tree = &kdtree;
 
+    Ray ray;
+    ray.origin = {1.0, 1.0, 1.0};
+    ray.direction = {-10.0, -10.0, -10.0};
+
     while(!view.Closed()) {
         CheckControls(view.GetKeys(), view, camera);
 
         view.Clear();
         camera.Update();
-        if(render_obj)
+        if(render_obj) {
             view.RenderObj(bunny_transform, bunny_mesh, shader, light);
+        }
+
+        RenderRay(view, line_mesh, line_shader, ray);
+    
         RenderKDTree(view, box_shader, &kdtree.GetTree());
         view.Update();
     }
@@ -84,6 +100,10 @@ void RenderKDTree(View& view, Shader& shader, KDNode* node) {
     RenderKDTree(view, shader, node->left_child);
     RenderKDTree(view, shader, node->right_child);
 }
+
+void RenderRay(View& view, Mesh& line_mesh, Shader& line_shader, Ray& ray) {
+    view.RenderLine(line_mesh, line_shader, ray.origin, ray.direction, {1.0, 0.0, 0.0, 1.0});
+}   
 
 void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     if(keys[GLFW_KEY_Q]) {
@@ -111,13 +131,13 @@ void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     }
 
     if(keys[GLFW_KEY_T]) {
-        tree_depth = glm::clamp(++tree_depth, 0, 12);
+        tree_depth = glm::clamp(++tree_depth, 0, 20);
         tree->Build(tree_depth, max_elements);
         keys[GLFW_KEY_T] = false;
     }
 
     if(keys[GLFW_KEY_R]) {
-        tree_depth = glm::clamp(--tree_depth, 0, 12);
+        tree_depth = glm::clamp(--tree_depth, 0, 20);
         tree->Build(tree_depth, max_elements);
         keys[GLFW_KEY_R] = false;
     }

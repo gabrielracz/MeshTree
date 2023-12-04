@@ -56,6 +56,7 @@ public:
     void Clear();
     void RenderObj(Transform& transform, Mesh& mesh, Shader& shader, Light& light);
     void RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec3& max_extent, const glm::vec4 color);
+    void RenderLine(Mesh& line_mesh, Shader& shader, const glm::vec3& origin, const glm::vec3& direction, const glm::vec4& color);
     void Update();
 
     void ToggleMouseCapture();
