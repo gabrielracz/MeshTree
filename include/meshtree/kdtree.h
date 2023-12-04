@@ -16,14 +16,18 @@ class KDTree {
 public:
     KDTree(std::vector<Triangle>& tris);
     void Build(int max_depth, int max_triangles);
-    Intersection RayIntersect(Ray& r);
+    bool RayIntersect(Ray& r, Intersection* intersection);
     KDNode& GetTree() {return nodes.front();}
 
 private:
     void BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::vector<int> tri_indices, int current_depth);
     int GetLeafID();
-    static Axis GetLargestAxis(AABB& aabb);
     static float SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* axis);
+
+    // helpers
+    static Axis GetLargestAxis(AABB& aabb);
+    static glm::vec3 MinimumTriangleVertex(std::vector<Triangle>& tris, Axis axis);
+    static glm::vec3 MaximumTriangleVertex(std::vector<Triangle>& tris, Axis axis);
 
     std::vector<Triangle>& triangles; // non-owning
     std::vector<KDNode> nodes;

@@ -47,7 +47,7 @@ int main(void){
     Camera& camera = view.GetCamera();
     camera.transform.SetJoint(-config::camera_position);
     camera.Attach(&bunny_transform);
-    camera.OrbitYaw(PI/4.0f);
+    camera.OrbitYaw(PI/2.0f);
     light.Attach(&camera.transform);
 
     MouseMap& mouse_buttons = view.GetMouseButtons();
@@ -71,8 +71,9 @@ int main(void){
     tree = &kdtree;
 
     Ray ray;
-    ray.origin = {1.0, 1.0, 1.0};
-    ray.direction = {-10.0, -10.0, -10.0};
+    ray.origin = {5.0, 5.0, 5.0};
+    ray.direction = {-0.577, -0.577, -0.577};
+    ray.tmax = 10.0f;
 
     while(!view.Closed()) {
         CheckControls(view.GetKeys(), view, camera);
@@ -83,8 +84,15 @@ int main(void){
             view.RenderObj(bunny_transform, bunny_mesh, shader, light);
         }
 
-        RenderRay(view, line_mesh, line_shader, ray);
-    
+        Intersection intersection;
+        if(kdtree.RayIntersect(ray, &intersection)) {
+            // ray.tmax = intersection.t0;
+            // std::cout << intersection.t0 << " " << intersection.t1 << std::endl;
+            glm::vec3 point = ray.origin + (ray.direction * intersection.t0);
+            view.RenderLine(line_mesh, line_shader, ray.origin, point, {1.0, 0.0, 0.0, 1.0});
+        }
+
+        // RenderRay(view, line_mesh, line_shader, ray);
         RenderKDTree(view, box_shader, &kdtree.GetTree());
         view.Update();
     }
@@ -102,7 +110,7 @@ void RenderKDTree(View& view, Shader& shader, KDNode* node) {
 }
 
 void RenderRay(View& view, Mesh& line_mesh, Shader& line_shader, Ray& ray) {
-    view.RenderLine(line_mesh, line_shader, ray.origin, ray.direction, {1.0, 0.0, 0.0, 1.0});
+    view.RenderLine(line_mesh, line_shader, ray.origin, ray.direction * ray.tmax, {1.0, 0.0, 0.0, 1.0});
 }   
 
 void CheckControls(KeyMap& keys, View& view, Camera& camera) {

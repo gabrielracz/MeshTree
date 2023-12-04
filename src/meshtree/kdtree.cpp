@@ -107,28 +107,6 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::
     BuildTree(*left_child, left_child_tris, left_child_indices, current_depth);
 }
 
-glm::vec3 MinimumTriangleVertex(std::vector<Triangle>& tris, Axis axis) {
-    glm::vec3 min = tris.front().vertices[0];
-    for(Triangle& t : tris){ 
-        glm::vec3 tmin = t.MinVertex(axis);
-        if(tmin[axis] < min[axis]) {
-            min = tmin;
-        }
-    }
-    return min;
-}
-
-glm::vec3 MaximumTriangleVertex(std::vector<Triangle>& tris, Axis axis) {
-    glm::vec3 max = tris.front().vertices[0];
-    for(Triangle& t : tris){ 
-        glm::vec3 tmax = t.MaxVertex(axis);
-        if(tmax[axis] > max[axis]) {
-            max = tmax;
-        }
-    }
-    return max;
-}
-
 // return split index along this axis that maximizes SAH
 float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optimal_axis) {
 
@@ -137,8 +115,6 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
 
     float min_cost = INF;
     float best_split = 0;
-
-
 
     // try every axis to find the best split
     Axis axis = *optimal_axis;
@@ -189,6 +165,19 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
     return best_split;
 }
 
+bool KDTree::RayIntersect(Ray &ray, Intersection* intersect) {
+    float t0, t1;
+    KDNode& root = nodes[0];
+    if(root.aabb.Intersect(ray, &t0, &t1)) {
+        intersect->t0 = t0;
+        intersect->t1 = t1;
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
 Axis KDTree::GetLargestAxis(AABB& aabb) {
     glm::vec3 diff = glm::abs(aabb.max - aabb.min);
     if(diff.x > diff.y && diff.x > diff.z) {
@@ -202,4 +191,26 @@ Axis KDTree::GetLargestAxis(AABB& aabb) {
 
 int KDTree::GetLeafID() {
     return leaf_id_counter++;
+}
+
+glm::vec3 KDTree::MinimumTriangleVertex(std::vector<Triangle>& tris, Axis axis) {
+    glm::vec3 min = tris.front().vertices[0];
+    for(Triangle& t : tris){ 
+        glm::vec3 tmin = t.MinVertex(axis);
+        if(tmin[axis] < min[axis]) {
+            min = tmin;
+        }
+    }
+    return min;
+}
+
+glm::vec3 KDTree::MaximumTriangleVertex(std::vector<Triangle>& tris, Axis axis) {
+    glm::vec3 max = tris.front().vertices[0];
+    for(Triangle& t : tris){ 
+        glm::vec3 tmax = t.MaxVertex(axis);
+        if(tmax[axis] > max[axis]) {
+            max = tmax;
+        }
+    }
+    return max;
 }

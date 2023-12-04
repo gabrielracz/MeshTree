@@ -1,6 +1,7 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 #include <glm/glm.hpp>
+#include <iostream>
 #include <initializer_list>
 #include <array>
 #include <vector>
@@ -47,9 +48,14 @@ struct Triangle {
 
         return glm::abs(max[axis] - min[axis]);
     }
-
 };
 
+
+struct Ray {
+    glm::vec3 origin {};
+    glm::vec3 direction {};
+    float tmax = 0.0f; // maximum time along the direction
+};
 
 struct AABB {
     glm::vec3 min;
@@ -58,15 +64,33 @@ struct AABB {
     float split_point = 0.0;
     AABB(): min(-INF), max(INF) {}
     AABB(const glm::vec3& min, const glm::vec3& max) : min(min), max(max) {}
+    // taken from https://github.com/mmp/pbrt-v3/blob/master/src/core/geometry.h
+    bool Intersect(Ray& ray, float* hit_t0, float* hit_t1) {
+        float t0 = 0, t1 = ray.tmax;
+        for (int i = 0; i < 3; ++i) {
+            // Update interval for _i_th bounding box slab
+            float invRayDir = 1 / ray.direction[i];
+            float tNear = (min[i] - ray.origin[i]) * invRayDir;
+            float tFar = (max[i] - ray.origin[i]) * invRayDir;
+
+            // Update parametric interval from slab intersection $t$ values
+            if (tNear > tFar) std::swap(tNear, tFar);
+
+            t0 = tNear > t0 ? tNear : t0;
+            t1 = tFar < t1 ? tFar : t1;
+            if (t0 > t1) return false;
+        }
+        if (hit_t0) *hit_t0 = t0;
+        if (hit_t1) *hit_t1 = t1;
+        return true;
+    }
 };
 
-struct Ray {
-    glm::vec3 origin;
-    glm::vec3 direction;
-};
 
 struct Intersection {
     int triangle_id;
+    float t0 = 0;
+    float t1 = 0;
 };
 
 #endif
