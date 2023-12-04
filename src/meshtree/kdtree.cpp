@@ -154,7 +154,6 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
             float cost = traversal_cost + (1.0f-empty_bonus) * intersect_cost * (PA * Acount + PB * Bcount);
 
             if(cost < min_cost) {
-                min_cost = cost;
                 best_split = split;
                 *optimal_axis = static_cast<Axis>(axis);
             }
