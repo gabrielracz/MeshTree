@@ -15,7 +15,7 @@ void main()
     bool onEdge = (uv_interp.x < edgeThreshold || uv_interp.x > 1.0 - edgeThreshold ||
                     uv_interp.y < edgeThreshold || uv_interp.y > 1.0 - edgeThreshold);
     if(onEdge) {
-        col.a = 1.0;
+        // col.a = 1.0;
     }
 	gl_FragColor = col;
 }

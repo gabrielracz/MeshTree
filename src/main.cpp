@@ -16,6 +16,11 @@ void MouseControls(Camera& camera, MouseMap& mouse_buttons, Mouse& mouse);
 void RenderKDTree(View& view, Shader& shader, KDNode* tree);
 
 
+KDTree* tree = nullptr;
+int tree_depth = 1;
+int max_elements = 10;
+bool render_obj = true;
+
 int main(void){
 
     // RENDERING
@@ -54,14 +59,16 @@ int main(void){
     } 
 
     KDTree kdtree(triangles);
-    kdtree.Build(12, 1);
+    kdtree.Build(0, 1);
+    tree = &kdtree;
 
     while(!view.Closed()) {
         CheckControls(view.GetKeys(), view, camera);
 
         view.Clear();
         camera.Update();
-        view.RenderObj(bunny_transform, bunny_mesh, shader, light);
+        if(render_obj)
+            view.RenderObj(bunny_transform, bunny_mesh, shader, light);
         RenderKDTree(view, box_shader, &kdtree.GetTree());
         view.Update();
     }
@@ -80,7 +87,7 @@ void RenderKDTree(View& view, Shader& shader, KDNode* node) {
 
 void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     if(keys[GLFW_KEY_Q]) {
-        view.ToggleMouseCapture();
+        render_obj = !render_obj;
         keys[GLFW_KEY_Q] = false;
     }
 
@@ -101,6 +108,18 @@ void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     if(keys[GLFW_KEY_E]) {
         view.ToggleRenderMode();
         keys[GLFW_KEY_E] = false;
+    }
+
+    if(keys[GLFW_KEY_T]) {
+        tree_depth = glm::clamp(++tree_depth, 0, 12);
+        tree->Build(tree_depth, max_elements);
+        keys[GLFW_KEY_T] = false;
+    }
+
+    if(keys[GLFW_KEY_R]) {
+        tree_depth = glm::clamp(--tree_depth, 0, 12);
+        tree->Build(tree_depth, max_elements);
+        keys[GLFW_KEY_R] = false;
     }
 }
 

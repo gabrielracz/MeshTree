@@ -20,12 +20,13 @@ public:
 private:
     void BuildTree(KDNode& node, std::vector<Triangle> contained_tris, int current_depth);
     static Axis GetLargestAxis(AABB& aabb);
-    static float SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis axis);
+    static float SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* axis);
 
     std::vector<Triangle>& triangles; // non-owning
     std::vector<KDNode> nodes;
 
     int max_depth = 0;
+    int max_elements = 0;
 
 };
 

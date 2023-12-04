@@ -26,7 +26,7 @@ struct Triangle {
         return area;
     }
 
-    float Bounds(Axis axis) {
+    float Bounds(int axis) {
         glm::vec3 min =  *std::min_element(vertices.begin(), vertices.end(), [axis](glm::vec3 a, glm::vec3 b) {
             return a[axis] < b[axis];
         });

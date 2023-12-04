@@ -11,6 +11,7 @@ KDTree::KDTree(std::vector<Triangle>& tris) : triangles(tris) {}
 // Depth n - subdivide n times
 void KDTree::Build(int depth, int max_triangles) {
     max_depth = depth;
+    max_elements = max_triangles;
     nodes.resize(2*max_depth + 1);
 
     // Create a bounding box that fully captures the triangles
@@ -38,7 +39,7 @@ void KDTree::Build(int depth, int max_triangles) {
 
 
 void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, int current_depth) {
-    if(current_depth > max_depth) {
+    if(current_depth > max_depth || contained_tris.size() < max_elements) {
         return;
     }
 
@@ -50,12 +51,13 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, int c
     });
     //find split
 
-    float split_point = SplitSurfaceAreaHeuristic(contained_tris, split_plane);
+    // Axis split_plane = Axis::XAXIS;
+    float split_point = SplitSurfaceAreaHeuristic(contained_tris, &split_plane);
     std::cout << split_point << " " << split_plane << std::endl;
     std::vector<Triangle> left_child_tris;
     std::vector<Triangle> right_child_tris;
     for(Triangle& t : contained_tris) {
-        bool left = true; // true if to the left, right otherwise
+        bool left = false; // true if to the left, right otherwise
         bool right = false;
         for(const glm::vec3& v : t.vertices) {
             if(v[split_plane] < split_point) {
@@ -74,6 +76,8 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, int c
             right_child_tris.push_back(t);
         }
     }
+
+
     KDNode* right_child = new KDNode();
     KDNode* left_child = new KDNode();
 
@@ -87,60 +91,67 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, int c
     node.right_child = right_child;
     node.left_child = left_child;
 
-    BuildTree(*right_child, right_child_tris, ++current_depth);
-    BuildTree(*left_child, left_child_tris, ++current_depth);
+    // std::cout << "SPLIT: " << left_child_tris.size() << " " << right_child_tris.size() << std::endl;
+
+    current_depth += 1;
+    BuildTree(*right_child, right_child_tris, current_depth);
+    BuildTree(*left_child, left_child_tris, current_depth);
 }
 
 // return split index along this axis that maximizes SAH
-float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis axis) {
-    // threshold, not indices
-    std::vector<float> possible_splits;
+float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optimal_axis) {
 
-    // TODO: possible optimization
-    // consider splitting at each vertex
-    for(const Triangle& t: tris) {
-        for(const glm::vec3& v: t.vertices) {
-            possible_splits.push_back(v[axis]);
-        }
-    }
+    float traversal_cost = 1;
+    float intersect_cost = 80;
 
     float min_cost = INF;
     float best_split = 0;
 
-    float start = tris.front().vertices[0][axis];
-    float end = tris.back().vertices[0][axis];
-    float num_steps = 64;
-    float step_size = (glm::abs(start) + glm::abs(end))/num_steps;
 
-    // for(float split : possible_splits) {
-    // for(float split : possible_splits) {
-    for(float split = start; split < end; split += step_size) {
-        int Acount = 0;
-        float ASA    = 0;
-        int Bcount = 0;
-        float BSA    = 0;
-        // calculate partioned surface areas
-        for(Triangle& t : tris) {
-            if(t.centroid[axis] < split) { // left of split
-                Acount++;
-                // ASA += t.SurfaceArea();
-                ASA += t.Bounds(axis);
-            } else {                       // right of split
-                Bcount++;
-                // BSA += t.SurfaceArea();
-                BSA += t.Bounds(axis);
+
+    // try every axis to find the best split
+    Axis axis = *optimal_axis;
+    // for(int axis = 0; axis < 3; axis++) {
+        // threshold, not indices
+
+        float start = tris.front().vertices[0][axis];
+        float end = tris.back().vertices[0][axis];
+        float num_steps = 64;
+        float step_size = (glm::abs(start) + glm::abs(end))/num_steps;
+
+        // for(float split : possible_splits) {
+        // for(float split : possible_splits) {
+        for(float split = start; split < end; split += step_size) {
+            int Acount = 0;
+            float ASA    = 0;
+            int Bcount = 0;
+            float BSA    = 0;
+            // calculate partioned surface areas
+            for(Triangle& t : tris) {
+                if(t.centroid[axis] < split) { // left of split
+                    Acount++;
+                    ASA += t.SurfaceArea();
+                    // ASA += t.Bounds(axis);
+                } else {                       // right of split
+                    Bcount++;
+                    BSA += t.SurfaceArea();
+                    // BSA += t.Bounds(axis);
+                }
+            }
+
+            // float empty_bonus = (Acount == 0 || Bcount == 0) ? 0.9 : 0;
+            float empty_bonus = 0.0;
+
+            float SA = ASA + BSA; // total surface area
+            float cost = traversal_cost + (1-empty_bonus) * intersect_cost * (Acount * ASA + Bcount*BSA) / SA;
+
+            if(cost < min_cost) {
+                min_cost = cost;
+                best_split = split;
+                // *optimal_axis = static_cast<Axis>(axis);
             }
         }
-
-        float SA = ASA + BSA; // total surface area
-        // float cost = (ASA/SA) * Acount + (BSA/SA) * Bcount;
-        float cost = (Acount * ASA + Bcount*BSA) / SA;
-
-        if(cost < min_cost) {
-            min_cost = cost;
-            best_split = split;
-        }
-    }
+    // }
     return best_split;
 }
 
