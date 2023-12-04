@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <initializer_list>
 #include <array>
+#include <vector>
 #include <algorithm>
 
 #define INF std::numeric_limits<float>::infinity()
@@ -12,6 +13,7 @@ enum Axis {
     YAXIS = 1,
     ZAXIS = 2
 };
+
 
 struct Triangle {
     std::array<glm::vec3, 3> vertices = {};
@@ -26,18 +28,28 @@ struct Triangle {
         return area;
     }
 
-    float Bounds(int axis) {
+    glm::vec3 MinVertex(Axis axis) {
         glm::vec3 min =  *std::min_element(vertices.begin(), vertices.end(), [axis](glm::vec3 a, glm::vec3 b) {
             return a[axis] < b[axis];
         });
+        return min;
+    }
+    glm::vec3 MaxVertex(Axis axis) {
         glm::vec3 max =  *std::max_element(vertices.begin(), vertices.end(), [axis](glm::vec3 a, glm::vec3 b) {
             return a[axis] < b[axis];
         });
+        return max;
+    }
+
+    float Bounds(Axis axis) {
+        glm::vec3 min = MinVertex(axis);
+        glm::vec3 max = MaxVertex(axis);
 
         return glm::abs(max[axis] - min[axis]);
     }
 
 };
+
 
 struct AABB {
     glm::vec3 min;

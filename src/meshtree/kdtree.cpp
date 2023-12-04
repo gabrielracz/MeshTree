@@ -46,14 +46,14 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, int c
 
     // select a plane to split
     Axis split_plane = GetLargestAxis(node.aabb);
-    std::sort(contained_tris.begin(), contained_tris.end(), [split_plane](Triangle a, Triangle b) {
-        return a.centroid[split_plane] < b.centroid[split_plane];
-    });
+    // std::sort(contained_tris.begin(), contained_tris.end(), [split_plane](Triangle a, Triangle b) {
+    //     return a.centroid[split_plane] < b.centroid[split_plane];
+    // });
     //find split
 
     // Axis split_plane = Axis::XAXIS;
     float split_point = SplitSurfaceAreaHeuristic(contained_tris, &split_plane);
-    std::cout << split_point << " " << split_plane << std::endl;
+    // std::cout << split_point << " " << split_plane << std::endl;
     std::vector<Triangle> left_child_tris;
     std::vector<Triangle> right_child_tris;
     for(Triangle& t : contained_tris) {
@@ -91,11 +91,31 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, int c
     node.right_child = right_child;
     node.left_child = left_child;
 
-    // std::cout << "SPLIT: " << left_child_tris.size() << " " << right_child_tris.size() << std::endl;
-
     current_depth += 1;
     BuildTree(*right_child, right_child_tris, current_depth);
     BuildTree(*left_child, left_child_tris, current_depth);
+}
+
+glm::vec3 MinimumTriangleVertex(std::vector<Triangle>& tris, Axis axis) {
+    glm::vec3 min = tris.front().vertices[0];
+    for(Triangle& t : tris){ 
+        glm::vec3 tmin = t.MinVertex(axis);
+        if(tmin[axis] < min[axis]) {
+            min = tmin;
+        }
+    }
+    return min;
+}
+
+glm::vec3 MaximumTriangleVertex(std::vector<Triangle>& tris, Axis axis) {
+    glm::vec3 max = tris.front().vertices[0];
+    for(Triangle& t : tris){ 
+        glm::vec3 tmax = t.MaxVertex(axis);
+        if(tmax[axis] > max[axis]) {
+            max = tmax;
+        }
+    }
+    return max;
 }
 
 // return split index along this axis that maximizes SAH
@@ -111,16 +131,16 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
 
     // try every axis to find the best split
     Axis axis = *optimal_axis;
-    // for(int axis = 0; axis < 3; axis++) {
-        // threshold, not indices
+    // for(Axis axis = XAXIS; axis < 3; axis = static_cast<Axis>(axis + 1)) {
 
-        float start = tris.front().vertices[0][axis];
-        float end = tris.back().vertices[0][axis];
+        // float start = tris.front().vertices[0][axis];
+        // float end = tris.back().vertices[0][axis];
+
+        float start = MinimumTriangleVertex(tris, axis)[axis];
+        float end = MaximumTriangleVertex(tris, axis)[axis];
         float num_steps = 64;
         float step_size = (glm::abs(start) + glm::abs(end))/num_steps;
 
-        // for(float split : possible_splits) {
-        // for(float split : possible_splits) {
         for(float split = start; split < end; split += step_size) {
             int Acount = 0;
             float ASA    = 0;
@@ -130,25 +150,27 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
             for(Triangle& t : tris) {
                 if(t.centroid[axis] < split) { // left of split
                     Acount++;
-                    ASA += t.SurfaceArea();
-                    // ASA += t.Bounds(axis);
+                    // ASA += t.SurfaceArea();
+                    ASA += t.Bounds(axis);
                 } else {                       // right of split
                     Bcount++;
-                    BSA += t.SurfaceArea();
-                    // BSA += t.Bounds(axis);
+                    // BSA += t.SurfaceArea();
+                    BSA += t.Bounds(axis);
                 }
             }
 
-            // float empty_bonus = (Acount == 0 || Bcount == 0) ? 0.9 : 0;
-            float empty_bonus = 0.0;
+            // reward making one of the partitions completely empty
+            float empty_bonus = (Acount == 0 || Bcount == 0) ? 0.49 : 0;
 
             float SA = ASA + BSA; // total surface area
-            float cost = traversal_cost + (1-empty_bonus) * intersect_cost * (Acount * ASA + Bcount*BSA) / SA;
+            float PA = ASA/SA;
+            float PB = BSA/SA;
+            float cost = traversal_cost + (1-empty_bonus) * intersect_cost * (PA * Acount + PB * Bcount);
 
             if(cost < min_cost) {
                 min_cost = cost;
                 best_split = split;
-                // *optimal_axis = static_cast<Axis>(axis);
+                *optimal_axis = static_cast<Axis>(axis);
             }
         }
     // }
