@@ -7,7 +7,6 @@
 
 KDTree::KDTree(std::vector<Triangle>& tris) : triangles(tris) {}
 
-
 // Depth 0 - single AABB
 // Depth n - subdivide n times
 void KDTree::Build(int depth, int max_triangles) {
@@ -164,9 +163,7 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
     return best_split;
 }
 
-int t = 0;
 bool KDTree::RayIntersect(Ray &ray, Intersection* intersect) {
-    t = 0;
     float t0, t1;
     KDNode& root = nodes[0];
 
@@ -174,16 +171,13 @@ bool KDTree::RayIntersect(Ray &ray, Intersection* intersect) {
     if(!hit_root_box) {
         return false;
     }
-    std::cout << "hit root" << std::endl;
     return RayTraverse(root, ray, intersect);
 }
 
 
 bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
     // Check leaf node 
-    std::cout << t++ << std::endl;
     if(node.leaf_id != INTERIOR_NODE) {
-        std::cout << "testing leaf" << std::endl;
         float time = 0.0;
         float min_time = INF;
         int earliest_triangle = 0;
@@ -196,7 +190,6 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
         }
 
         if(min_time == INF) {   // either contains no triangles or the ray hit none of them
-            std::cout << "didn't find any" << std::endl;
             return false;
         }
 
@@ -228,7 +221,6 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
     KDNode* second = nullptr;
 
     if(left_hit && right_hit) { // both children hit, traverse the smaller one first.
-        std::cout << "hit both" << std::endl;
         if(tleft < tright) {
             first = node.left_child;
             second = node.right_child;
@@ -237,10 +229,8 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
             second = node.left_child;
         }
     } else if (left_hit) {
-        std::cout << "hit left" << std::endl;
         first = node.left_child;
     } else {                   // we made sure at least one was hit above
-        std::cout << "hit right" << std::endl;
         first = node.right_child;
     }
 
