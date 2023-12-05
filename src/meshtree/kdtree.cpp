@@ -5,7 +5,7 @@
 
 #include "kdtree.h"
 
-int KDTree::leaf_id_counter = 1;
+int KDTree::node_id_counter = 1;
 
 KDTree::KDTree(std::vector<Triangle>& tris) : triangles(tris) {}
 
@@ -34,6 +34,7 @@ void KDTree::Build(int depth, int max_triangles) {
     int root_index = 0;
     AABB root_box(min_extent, max_extent);
     nodes[root_index].aabb = root_box;
+    nodes[root_index].id = CreateNodeID();
 
     std::vector<int> all_triangle_indices(triangles.size());
     std::iota(all_triangle_indices.begin(), all_triangle_indices.end(), 0);
@@ -47,10 +48,10 @@ void KDTree::Build(int depth, int max_triangles) {
 void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::vector<int> tri_indices, int current_depth) {
     if(current_depth > max_depth || contained_tris.size() < max_elements) {
         // make this a leaf
-        node.leaf_id = GetLeafID();
-        leaf_triangle_map.emplace(node.leaf_id, tri_indices);
+        node.isleaf = true;
+        leaf_triangle_map.emplace(node.id, tri_indices);
         return;
-    }
+    };
 
     // select a plane to split
     Axis split_plane = GetLargestAxis(node.aabb);
@@ -91,6 +92,8 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::
 
     KDNode* right_child = new KDNode();
     KDNode* left_child = new KDNode();
+    right_child->id = CreateNodeID();
+    left_child->id = CreateNodeID();
 
     // configure child boxes
     right_child->aabb = node.aabb;
@@ -180,11 +183,11 @@ bool KDTree::RayIntersect(Ray &ray, Intersection* intersect) {
 
 bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
     // Check leaf node 
-    if(node.leaf_id != INTERIOR_NODE) {
+    if(node.isleaf) {
         float time = 0.0;
         float min_time = INF;
         int earliest_triangle = 0;
-        std::vector<int> contained_tri_indices = leaf_triangle_map[node.leaf_id];
+        std::vector<int> contained_tri_indices = leaf_triangle_map[node.id];
         for(int i : contained_tri_indices) {
             if(triangles[i].Intersect(ray, &time) && time < min_time) {
                 min_time = time;
@@ -248,15 +251,27 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
     return false;
 }
 
-bool KDTree::TreeTraverse(KDTree& tree1, KDTree& tree2, KDNode& node1, KDNode& node2, NodeIntersection* intersection) {
+bool KDTree::TreeIntersect(KDTree& tree1, KDTree& tree2, int search_depth, NodeIntersection* intersection) {
+    KDNode& root1 = tree1.GetTree();
+    KDNode& root2 = tree2.GetTree();
+
+    bool root_boxes_overlap = root1.aabb.Intersect(root2.aabb);
+    if(!root_boxes_overlap) {
+        std::cout << "roots dont overlap" << std::endl;
+        return false;
+    }
+    return TreeTraverse(tree1, tree2, root1, root2, search_depth, 0, intersection);
+}
+
+bool KDTree::TreeTraverse(KDTree& tree1, KDTree& tree2, KDNode& node1, KDNode& node2, int search_depth, int current_depth, NodeIntersection* intersection) {
     // traverse until we reach a leaf node on both trees
-    if(node1.leaf_id != INTERIOR_NODE && node2.leaf_id != INTERIOR_NODE) {
+    if(node1.isleaf && node2.isleaf) {
         // check for overlapping triangles
-        for(int i : tree1.GetLeafTriangleIndices(node1.leaf_id)) {
-            for(int j : tree2.GetLeafTriangleIndices(node2.leaf_id)) {
+        for(int i : tree1.GetLeafTriangleIndices(node1.id)) {
+            for(int j : tree2.GetLeafTriangleIndices(node2.id)) {
                 if(tree1.triangles[i].Intersect(tree2.triangles[j])) {
-                    intersection->leaf_id1 = node1.leaf_id;
-                    intersection->leaf_id2 = node2.leaf_id;
+                    intersection->node_id1 = node1.id;
+                    intersection->node_id2 = node2.id;
                     intersection->triangle_id1 = i;
                     intersection->triangle_id2 = j;
                     return true;
@@ -266,17 +281,51 @@ bool KDTree::TreeTraverse(KDTree& tree1, KDTree& tree2, KDNode& node1, KDNode& n
         return false;
     }
 
-    // TODO: add some heuristic that improves searching in the right direction
+    // interior node(s) but we reached the maximum requested search depth
+    if(current_depth > search_depth) {
+        if(node1.isleaf || node2.isleaf) {
+            KDNode* leaf;
+            KDTree* leaf_tree;
+            KDNode* interior;
+            if(node1.isleaf) {
+                leaf = &node1;
+                leaf_tree = &tree1;
+                interior = &node2;
+            } else {
+                leaf = &node2;
+                leaf_tree = &tree2;
+                interior = &node2;
+            }
 
+            for(int i : leaf_tree->GetLeafTriangleIndices(leaf->id)) {
+                if(interior->aabb.Intersect(leaf_tree->triangles[i])) {
+                    // the leaf's triangle intersects the interior's aabb
+                    intersection->triangle_id1 = i; 
+                    intersection->node_id1 = leaf->id;
+                    intersection->node_id2 = interior->id;
+                    return true;
+                }
+            }
+        }else {
+            // these two nodes are guarenteed to be overlapping as we descended into them.
+            intersection->node_id1 = node1.id;
+            intersection->node_id2 = node2.id;
+            return true;
+        }
+
+    }
+
+    // TODO: add some heuristic that improves searching in the right direction
+    current_depth++;
     // cover case where one is already a leaf node
-    if(node1.leaf_id != INTERIOR_NODE || node1.leaf_id != INTERIOR_NODE) {
-        KDNode& leaf     = node1.leaf_id != INTERIOR_NODE ? node1 : node2;
-        KDNode& interior = node1.leaf_id != INTERIOR_NODE ? node2 : node1;
+    if(node1.isleaf || node1.isleaf) {
+        KDNode& leaf     = node1.isleaf ? node1 : node2;
+        KDNode& interior = node1.isleaf ? node2 : node1;
         if(interior.left_child && leaf.aabb.Intersect(interior.left_child->aabb)) {
-            if(TreeTraverse(tree1, tree2, leaf, *interior.left_child, intersection)) { return true; }
+            if(TreeTraverse(tree1, tree2, leaf, *interior.left_child, search_depth, current_depth, intersection)) { return true; }
         }
         if(interior.right_child && leaf.aabb.Intersect(interior.right_child->aabb)) {
-            if(TreeTraverse(tree1, tree2, leaf, *interior.right_child, intersection)) { return true; }
+            if(TreeTraverse(tree1, tree2, leaf, *interior.right_child, search_depth, current_depth, intersection)) { return true; }
         }
         // if neither of the interior branches resulted in an intersection, this leaf does not have any
         return false;
@@ -288,25 +337,13 @@ bool KDTree::TreeTraverse(KDTree& tree1, KDTree& tree2, KDNode& node1, KDNode& n
     for(KDNode* child1 : children1) {
         for(KDNode* child2 : children2) {
             if(child1 && child2 && child1->aabb.Intersect(child2->aabb)) {
-                if(TreeTraverse(tree1, tree2, *child1, *child2, intersection)) {
+                if(TreeTraverse(tree1, tree2, *child1, *child2, search_depth, current_depth, intersection)) {
                     return true;
                 }
             }
         }
     }
     return false;
-}
-
-bool KDTree::TreeIntersect(KDTree& tree1, KDTree& tree2, NodeIntersection* intersection) {
-    KDNode& root1 = tree1.GetTree();
-    KDNode& root2 = tree2.GetTree();
-
-    bool root_boxes_overlap = root1.aabb.Intersect(root2.aabb);
-    if(!root_boxes_overlap) {
-        std::cout << "roots dont overlap" << std::endl;
-        return false;
-    }
-    return TreeTraverse(tree1, tree2, root1, root2, intersection);
 }
 
 
@@ -321,9 +358,9 @@ Axis KDTree::GetLargestAxis(AABB& aabb) {
     }
 }
 
-int KDTree::GetLeafID() {
-    // TODO: mutex if multithreaded
-    return leaf_id_counter++;
+int KDTree::CreateNodeID() {
+    // TODO: guard with mutex if multithreading
+    return node_id_counter++;
 }
 
 glm::vec3 KDTree::MinimumTriangleVertex(std::vector<Triangle>& tris, Axis axis) {

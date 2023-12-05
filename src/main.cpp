@@ -72,7 +72,7 @@ int main(void){
     Mesh      bunny_mesh(RESOURCES_DIRECTORY"/bunny_full.obj");
     std::vector<Triangle> triangles = GetMeshTriangles(bunny_mesh);
     KDTree kdtree(triangles);
-    kdtree.Build(tree_depth, 1);
+    kdtree.Build(0, 1);
     tree = &kdtree;
 
     Mesh      dragon_mesh(RESOURCES_DIRECTORY"/dragon.obj");
@@ -110,10 +110,10 @@ int main(void){
 
         //Render tree-intersections
         NodeIntersection nodeinter;
-        if(KDTree::TreeIntersect(kdtree, kdtree_col, &nodeinter)) {
+        if(KDTree::TreeIntersect(kdtree, kdtree_col, 3, &nodeinter)) {
             hit_triangle = nodeinter.triangle_id1;
-            hit_nodes.x = nodeinter.leaf_id1;
-            hit_nodes.y = nodeinter.leaf_id2;
+            hit_nodes.x = nodeinter.node_id1;
+            hit_nodes.y = nodeinter.node_id2;
         }
 
 
@@ -130,7 +130,7 @@ void RenderKDTree(View& view, Shader& shader, KDNode* node) {
         return;
     }
     glm::vec4 color = {1.0, 1.0, 1.0, 0.05f/(tree_depth+1)};
-    if(node->leaf_id == hit_nodes.x || node->leaf_id == hit_nodes.y) {
+    if(node->id == hit_nodes.x || node->id == hit_nodes.y) {
         color = {1.0, 0.0, 0.0, 0.25};
     }
     view.RenderBox(shader, node->aabb.min, node->aabb.max, color, draw_edges);
@@ -227,14 +227,14 @@ void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     if(keys[GLFW_KEY_T]) {
         tree_depth++;
         tree->Build(tree_depth, max_elements);
-        tree2->Build(tree_depth, max_elements);
+        tree2->Build(tree_depth+3, max_elements);
         keys[GLFW_KEY_T] = false;
     }
     if(keys[GLFW_KEY_R]) {
         tree_depth--;
         tree_depth = std::max(0, tree_depth);
         tree->Build(tree_depth, max_elements);
-        tree2->Build(tree_depth, max_elements);
+        tree2->Build(tree_depth+3, max_elements);
         keys[GLFW_KEY_R] = false;
     }
 }

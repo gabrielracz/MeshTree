@@ -75,35 +75,9 @@ struct Triangle {
     }
 
     bool Intersect(Triangle& o){
-        // glm::vec3 e1 = vertices[1] - vertices[0];
-        // glm::vec3 e2 = vertices[2] - vertices[0];
-        // glm::vec3 h = glm::cross(other.vertices[1] - other.vertices[0], other.vertices[2] - other.vertices[0]);
-        // float a = glm::dot(e1, h);
-
-        // // If a is too small, the triangles are coplanar
-        // if (a > -FLT_EPSILON && a < FLT_EPSILON) {
-        //     return false;
-        // }
-
-        // float f = 1.0f / a;
-        // glm::vec3 s = other.vertices[0] - vertices[0];
-        // float u = f * glm::dot(s, h);
-
-        // if (u < 0.0f || u > 1.0f) {
-        //     return false;
-        // }
-
-        // glm::vec3 q = glm::cross(s, e1);
-        // float v = f * glm::dot(other.vertices[1] - vertices[0], q);
-
-        // if (v < 0.0f || u + v > 1.0f) {
-        //     return false;
-        // }
-
-        // // At this point, u and v are within [0, 1], and u + v <= 1, so the triangles intersect
-        // return true;
+        // lib call
         return tri_tri_overlap_test_3d(glm::value_ptr(vertices[0]), glm::value_ptr(vertices[1]), glm::value_ptr(vertices[2]),
-                                glm::value_ptr(o.vertices[0]), glm::value_ptr(o.vertices[1]), glm::value_ptr(o.vertices[2]));
+                                       glm::value_ptr(o.vertices[0]), glm::value_ptr(o.vertices[1]), glm::value_ptr(o.vertices[2]));
     }
 };
 
@@ -144,6 +118,19 @@ struct AABB {
         // If there is overlap along all axes, the AABBs overlap
         return overlap_x && overlap_y && overlap_z;
     }
+
+    bool Intersect(const Triangle& tri) const {
+        // Check for overlap along each axis
+        for(const glm::vec3& v : tri.vertices) {
+            bool inside = v.x >= min.x && v.x <= max.x &&
+                          v.y >= min.y && v.y <= max.y &&
+                          v.z >= min.z && v.y <= max.y;
+            if(inside) {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 struct Intersection {
@@ -153,8 +140,8 @@ struct Intersection {
 };
 
 struct NodeIntersection {
-    int leaf_id1     = -1;
-    int leaf_id2     = -1;
+    int node_id1     = -1;
+    int node_id2     = -1;
     int triangle_id1 = -1;
     int triangle_id2 = -1;
 };
