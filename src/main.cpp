@@ -23,7 +23,8 @@ const std::vector<float> line_verts = {
 };
 
 KDTree* tree = nullptr;
-int tree_depth = 11;
+KDTree* tree2 = nullptr;
+int tree_depth = 3;
 int max_elements = 10;
 bool render_obj = true;
 int hit_triangle = -1;
@@ -74,13 +75,14 @@ int main(void){
     kdtree.Build(tree_depth, 1);
     tree = &kdtree;
 
-    Mesh      dragon_mesh(RESOURCES_DIRECTORY"/bunny_full.obj");
+    Mesh      dragon_mesh(RESOURCES_DIRECTORY"/dragon.obj");
     Transform dragon_transform;
     dragon_transform.SetPosition({2.0, 1.0, 0.5});
     std::vector<Triangle> dragon_triangles = GetMeshTriangles(dragon_mesh, dragon_transform);
 
     KDTree kdtree_col(dragon_triangles);
     kdtree_col.Build(tree_depth, 1);
+    tree2 = &kdtree_col;
     // kdtree_col
 
     ray.tmax = 10.0f;
@@ -128,9 +130,9 @@ void RenderKDTree(View& view, Shader& shader, KDNode* node) {
         return;
     }
     glm::vec4 color = {1.0, 1.0, 1.0, 0.05f/(tree_depth+1)};
-    // if(node->leaf_id == hit_nodes.x || node->leaf_id == hit_nodes.y) {
-    //     color = {1.0, 0.0, 0.0, 0.25};
-    // }
+    if(node->leaf_id == hit_nodes.x || node->leaf_id == hit_nodes.y) {
+        color = {1.0, 0.0, 0.0, 0.25};
+    }
     view.RenderBox(shader, node->aabb.min, node->aabb.max, color, draw_edges);
     RenderKDTree(view, shader, node->left_child);
     RenderKDTree(view, shader, node->right_child);
@@ -225,12 +227,14 @@ void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     if(keys[GLFW_KEY_T]) {
         tree_depth++;
         tree->Build(tree_depth, max_elements);
+        tree2->Build(tree_depth, max_elements);
         keys[GLFW_KEY_T] = false;
     }
     if(keys[GLFW_KEY_R]) {
         tree_depth--;
         tree_depth = std::max(0, tree_depth);
         tree->Build(tree_depth, max_elements);
+        tree2->Build(tree_depth, max_elements);
         keys[GLFW_KEY_R] = false;
     }
 }

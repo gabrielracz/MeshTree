@@ -12,6 +12,7 @@ KDTree::KDTree(std::vector<Triangle>& tris) : triangles(tris) {}
 // Depth 0 - single AABB
 // Depth n - subdivide n times
 void KDTree::Build(int depth, int max_triangles) {
+    nodes.clear();
     max_depth = depth;
     max_elements = max_triangles;
     nodes.resize(2*max_depth + 1);
@@ -264,6 +265,8 @@ bool KDTree::TreeTraverse(KDTree& tree1, KDTree& tree2, KDNode& node1, KDNode& n
         }
         return false;
     }
+
+    // TODO: add some heuristic that improves searching in the right direction
 
     // cover case where one is already a leaf node
     if(node1.leaf_id != INTERIOR_NODE || node1.leaf_id != INTERIOR_NODE) {
