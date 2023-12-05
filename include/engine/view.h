@@ -55,7 +55,7 @@ public:
 
     void Clear();
     void RenderObj(Transform& transform, Mesh& mesh, Shader& shader, Light& light, int highlighted_vertex = -1);
-    void RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec3& max_extent, const glm::vec4 color);
+    void RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec3& max_extent, const glm::vec4 color, int draw_edges = 0);
     void RenderLine(Mesh& line_mesh, Shader& shader, const glm::vec3& origin, const glm::vec3& direction, const glm::vec4& color);
     void Update();
 

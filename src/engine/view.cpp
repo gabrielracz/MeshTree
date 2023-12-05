@@ -137,7 +137,7 @@ void View::RenderObj(Transform &transform, Mesh &mesh, Shader &shader, Light& li
     mesh.Draw();
 }
 
-void View::RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec3& max_extent, const glm::vec4 color) {
+void View::RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec3& max_extent, const glm::vec4 color, int draw_edges) {
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -233,6 +233,7 @@ void View::RenderBox(Shader& shader, const glm::vec3& min_extent, const glm::vec
     shader.SetUniform4m(world, "world_mat");
 
     shader.SetUniform4f(color, "color");
+    shader.SetUniform1i(draw_edges, "draw_edges");
 
     cube.Draw();
     glDepthMask(GL_TRUE);

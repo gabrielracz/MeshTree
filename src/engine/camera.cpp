@@ -32,7 +32,6 @@ void Camera::Update() {
         transform.Update();
     }
 
-    float distance = glm::length(original_pos);
     float x = distance * glm::cos(orbit_pitch) * glm::cos(orbit_yaw);
     float y = distance * glm::sin(orbit_pitch);
     float z = distance * glm::cos(orbit_pitch) * glm::sin(orbit_yaw);
@@ -54,6 +53,7 @@ void Camera::SetView(glm::vec3 position, glm::vec3 look_at, glm::vec3 up){
     transform.SetPosition(position);
     transform.SetOrientation(glm::quat());
     original_pos = position;
+    distance = glm::length(original_pos);
 }
 
 

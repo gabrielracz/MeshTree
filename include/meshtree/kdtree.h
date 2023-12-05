@@ -19,13 +19,18 @@ public:
     KDTree(std::vector<Triangle>& tris);
     void Build(int max_depth, int max_triangles);
     bool RayIntersect(Ray& r, Intersection* intersection);
+
+    static bool TreeIntersect(KDTree& tree1, KDTree& tree2, NodeIntersection* intersection);
     KDNode& GetTree() {return nodes.front();}
+    std::vector<int> GetLeafTriangleIndices(int leaf_id);
 
 private:
     void BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::vector<int> tri_indices, int current_depth);
     bool RayTraverse(KDNode& node, Ray& ray, Intersection* intersection);
-    int GetLeafID();
+    static bool TreeTraverse(KDTree& tree1, KDTree& tree2, KDNode& node1, KDNode& node2, NodeIntersection* intersection);
+    static int GetLeafID();
     static float SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* axis);
+
 
     // helpers
     static Axis GetLargestAxis(AABB& aabb);
@@ -38,7 +43,7 @@ private:
 
     int max_depth = 0;
     int max_elements = 0;
-    int leaf_id_counter = 1;
+    static int leaf_id_counter;
 
 };
 

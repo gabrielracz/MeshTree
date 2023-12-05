@@ -5,6 +5,8 @@
 
 #include "kdtree.h"
 
+int KDTree::leaf_id_counter = 1;
+
 KDTree::KDTree(std::vector<Triangle>& tris) : triangles(tris) {}
 
 // Depth 0 - single AABB
@@ -35,7 +37,7 @@ void KDTree::Build(int depth, int max_triangles) {
     std::vector<int> all_triangle_indices(triangles.size());
     std::iota(all_triangle_indices.begin(), all_triangle_indices.end(), 0);
 
-    BuildTree(nodes[root_index], triangles, all_triangle_indices, 0);
+    BuildTree(nodes[root_index], triangles, all_triangle_indices, 1);
 
     return;
 }
@@ -48,7 +50,6 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::
         leaf_triangle_map.emplace(node.leaf_id, tri_indices);
         return;
     }
-
 
     // select a plane to split
     Axis split_plane = GetLargestAxis(node.aabb);
@@ -108,8 +109,8 @@ void KDTree::BuildTree(KDNode& node, std::vector<Triangle> contained_tris, std::
 // return split index along this axis that maximizes SAH
 float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optimal_axis) {
 
-    float traversal_cost = 1.0;
-    float intersect_cost = 70.0;
+    float traversal_cost = 2.0;
+    float intersect_cost = 80.0;
 
     float min_cost = INF;
     float best_split = 0;
@@ -124,6 +125,7 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
         float start = MinimumTriangleVertex(tris, axis)[axis];
         float end = MaximumTriangleVertex(tris, axis)[axis];
         float num_steps = 32;
+        if(tris.size() < 32) {num_steps = 2;}
         float step_size = (glm::abs(start) + glm::abs(end))/num_steps;
         // float step_size = 0.03f; // estimate the min size of a triangle
 
@@ -146,7 +148,7 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
             }
 
             // reward making one of the partitions completely empty
-            float empty_bonus = (Acount == 0 || Bcount == 0) ? 0.49 : 0.0;
+            float empty_bonus = (Acount == 0 || Bcount == 0) ? 0.40 : 0.0;
 
             float SA = ASA + BSA; // total surface area
             float PA = ASA/SA;
@@ -154,6 +156,7 @@ float KDTree::SplitSurfaceAreaHeuristic(std::vector<Triangle>& tris, Axis* optim
             float cost = traversal_cost + (1.0f-empty_bonus) * intersect_cost * (PA * Acount + PB * Bcount);
 
             if(cost < min_cost) {
+                min_cost = cost;
                 best_split = split;
                 *optimal_axis = static_cast<Axis>(axis);
             }
@@ -244,7 +247,64 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
     return false;
 }
 
+bool KDTree::TreeTraverse(KDTree& tree1, KDTree& tree2, KDNode& node1, KDNode& node2, NodeIntersection* intersection) {
+    // traverse until we reach a leaf node on both trees
+    if(node1.leaf_id != INTERIOR_NODE && node2.leaf_id != INTERIOR_NODE) {
+        // check for overlapping triangles
+        for(int i : tree1.GetLeafTriangleIndices(node1.leaf_id)) {
+            for(int j : tree2.GetLeafTriangleIndices(node2.leaf_id)) {
+                if(tree1.triangles[i].Intersect(tree2.triangles[j])) {
+                    intersection->leaf_id1 = node1.leaf_id;
+                    intersection->leaf_id2 = node2.leaf_id;
+                    intersection->triangle_id1 = i;
+                    intersection->triangle_id2 = j;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
+    // cover case where one is already a leaf node
+    if(node1.leaf_id != INTERIOR_NODE || node1.leaf_id != INTERIOR_NODE) {
+        KDNode& leaf     = node1.leaf_id != INTERIOR_NODE ? node1 : node2;
+        KDNode& interior = node1.leaf_id != INTERIOR_NODE ? node2 : node1;
+        if(interior.left_child && leaf.aabb.Intersect(interior.left_child->aabb)) {
+            if(TreeTraverse(tree1, tree2, leaf, *interior.left_child, intersection)) { return true; }
+        }
+        if(interior.right_child && leaf.aabb.Intersect(interior.right_child->aabb)) {
+            if(TreeTraverse(tree1, tree2, leaf, *interior.right_child, intersection)) { return true; }
+        }
+        // if neither of the interior branches resulted in an intersection, this leaf does not have any
+        return false;
+    }
+
+    // both nodes are interior
+    KDNode* children1[] = {node1.left_child, node1.right_child};
+    KDNode* children2[] = {node2.left_child, node2.right_child};
+    for(KDNode* child1 : children1) {
+        for(KDNode* child2 : children2) {
+            if(child1 && child2 && child1->aabb.Intersect(child2->aabb)) {
+                if(TreeTraverse(tree1, tree2, *child1, *child2, intersection)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool KDTree::TreeIntersect(KDTree& tree1, KDTree& tree2, NodeIntersection* intersection) {
+    KDNode& root1 = tree1.GetTree();
+    KDNode& root2 = tree2.GetTree();
+
+    bool root_boxes_overlap = root1.aabb.Intersect(root2.aabb);
+    if(!root_boxes_overlap) {
+        std::cout << "roots dont overlap" << std::endl;
+        return false;
+    }
+    return TreeTraverse(tree1, tree2, root1, root2, intersection);
+}
 
 
 Axis KDTree::GetLargestAxis(AABB& aabb) {
@@ -259,6 +319,7 @@ Axis KDTree::GetLargestAxis(AABB& aabb) {
 }
 
 int KDTree::GetLeafID() {
+    // TODO: mutex if multithreaded
     return leaf_id_counter++;
 }
 
@@ -282,4 +343,14 @@ glm::vec3 KDTree::MaximumTriangleVertex(std::vector<Triangle>& tris, Axis axis) 
         }
     }
     return max;
+}
+
+std::vector<int> KDTree::GetLeafTriangleIndices(int leaf_id) {
+    auto it = leaf_triangle_map.find(leaf_id);
+    if(it != leaf_triangle_map.end()) {
+        return it->second;
+    } else {
+        std::cout << "error, invalid leaf id " << leaf_id << std::endl;
+        return {};
+    }
 }

@@ -50,6 +50,7 @@ class Camera {
         glm::vec3 angular_velocity {0.0f, 0.0f, 0.0f};
         glm::vec3 velocity {0.0f, 0.0f, 0.0f};
         bool locked = false;
+        float distance = 1.0f;
 
         float orbit_yaw = 0.0;
         float orbit_pitch = 0.0;

@@ -53,7 +53,7 @@ vec4 lighting(vec4 pixel) {
 }
 void main() 
 {
-    vec4 pixel = (highlighted != gl_PrimitiveID) ? color_interp : vec4(1.0, 0.0, 0.0, 1.0);
+    vec4 pixel = (highlighted == gl_PrimitiveID) ? vec4(1.0, 0.0, 0.0, 1.0) : color_interp;
     vec4 lit_pixel = lighting(pixel);
     lit_pixel.a = 1.0;
     gl_FragColor =  lit_pixel;
