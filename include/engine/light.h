@@ -6,6 +6,7 @@
 
 class Light {
 public:
+    Light() = default;
     Light(const glm::vec4 color) : color(color) {}
 
     void Update(float dt);

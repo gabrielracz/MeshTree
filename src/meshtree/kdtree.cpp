@@ -251,7 +251,7 @@ bool KDTree::RayTraverse(KDNode& node, Ray& ray, Intersection* intersect) {
     return false;
 }
 
-bool KDTree::TreeIntersect(KDTree& tree1, KDTree& tree2, int search_depth, NodeIntersection* intersection) {
+bool KDTree::TreeIntersect(KDTree& tree1, KDTree& tree2, NodeIntersection* intersection, int search_depth) {
     KDNode& root1 = tree1.GetTree();
     KDNode& root2 = tree2.GetTree();
 
@@ -282,7 +282,7 @@ bool KDTree::TreeTraverse(KDTree& tree1, KDTree& tree2, KDNode& node1, KDNode& n
     }
 
     // interior node(s) but we reached the maximum requested search depth
-    if(current_depth > search_depth) {
+    if(search_depth != COMPLETE_SEARCH_DEPTH && current_depth > search_depth) {
         if(node1.isleaf || node2.isleaf) {
             KDNode* leaf;
             KDTree* leaf_tree;

@@ -39,6 +39,7 @@ namespace Colors {
 }
 
 typedef std::function<void(Mouse& mouse)> MouseHandler;
+typedef std::function<void(double xoffset, double yoffset)> ScrollHandler;
 
 
 template <typename K, typename V>

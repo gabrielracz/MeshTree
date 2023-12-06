@@ -93,6 +93,7 @@ void View::InitEventHandlers(void){
 
     // Set event callbacks
     glfwSetKeyCallback(win.ptr, KeyCallback);
+    glfwSetScrollCallback(win.ptr, ScrollCallback);
     glfwSetFramebufferSizeCallback(win.ptr, ResizeCallback);
     glfwSetCursorPosCallback(win.ptr, MouseMoveCallback);
 	glfwSetMouseButtonCallback(win.ptr, MouseButtonCallback);
@@ -337,4 +338,11 @@ void View::ToggleRenderMode() {
 
 bool View::Closed() {
     return glfwWindowShouldClose(win.ptr);
+}
+
+void View::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+	View* v = (View*) glfwGetWindowUserPointer(window);
+    if(v->scroll_handler) {
+        v->scroll_handler(xoffset, yoffset);
+    }
 }

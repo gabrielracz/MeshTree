@@ -61,6 +61,7 @@ public:
 
     void ToggleMouseCapture();
     void SetMouseHandler(MouseHandler h) { mouse_handler = h; }
+    void SetScrollHandler(ScrollHandler h) { scroll_handler = h; }
     void ToggleRenderMode();
 
     KeyMap &GetKeys() { return key_controls; }
@@ -95,8 +96,10 @@ private:
     static void ResizeCallback(GLFWwindow *window, int width, int height);
     static void MouseMoveCallback(GLFWwindow *window, double xpos, double ypos);
     static void MouseButtonCallback(GLFWwindow *window, int key, int action, int mods);
+    static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
     std::function<void(Mouse &mouse)> mouse_handler;
+    std::function<void(double, double)> scroll_handler;
 };
 
 #endif

@@ -20,8 +20,11 @@ set(HDRS
     include/engine/defines.h
     include/engine/light.h
 
+    include/meshtree/triangle-triangle.h
     include/meshtree/structures.h
     include/meshtree/kdtree.h
+
+    include/meshtree/application.h
 )
  
 set(SRCS
@@ -36,6 +39,8 @@ set(SRCS
     src/engine/light.cpp
 
     src/meshtree/kdtree.cpp
+
+    src/meshtree/application.cpp
 )
 
 # Add path name to configuration file

@@ -16,12 +16,13 @@ struct KDNode {
 
 class KDTree {
 public:
+    const static int COMPLETE_SEARCH_DEPTH = -1;
 
     KDTree(std::vector<Triangle>& tris);
     void Build(int max_depth, int max_triangles);
     bool RayIntersect(Ray& r, Intersection* intersection);
 
-    static bool TreeIntersect(KDTree& tree1, KDTree& tree2, int search_depth, NodeIntersection* intersection);
+    static bool TreeIntersect(KDTree& tree1, KDTree& tree2, NodeIntersection* intersection, int search_depth = COMPLETE_SEARCH_DEPTH);
     KDNode& GetTree() {return nodes.front();}
     std::vector<int> GetLeafTriangleIndices(int leaf_id);
 
