@@ -1,5 +1,11 @@
 #include "application.h"
+#include <bits/chrono.h>
 #include <functional>
+#include "glm/gtc/random.hpp"
+#include "glm/gtx/intersect.hpp"
+#include <chrono>
+#include <format>
+#include <locale>
 
 
 
@@ -9,6 +15,7 @@ const std::vector<float> line_verts = {
 };
 
 void Application::Init() {
+    srand(1337);
     view.Init("[] MeshTree - Gabriel Racz (c)", 800, 800);
 
     mesh_shader = Shader(SHADER_DIRECTORY"/lit_vp.glsl", SHADER_DIRECTORY"/lit_fp.glsl");
@@ -107,7 +114,69 @@ void Application::UpdateCollisionDemo() {
 }
 
 void Application::UpdateRaycastBenchmark() {
-    std::cout << "Wow those raycasts are fast" << std::endl;
+    int num_rays = 1'000'000;
+    std::cout.imbue(std::locale(""));
+    std::cout << "Running raycast benchmark with " << num_rays << " rays." << std::endl;
+
+    // generate rays
+    std::vector<Ray> test_rays;
+    test_rays.reserve(num_rays);
+    glm::vec3 simulated_camera_pos = {0.0, 0.0, 2.0f};
+    float width = 8.0f;
+    float height = 4.5f;
+    float xstep = width / num_rays;
+    float ystep = height / num_rays;
+    float far_plane = -10.0f;
+    for(int i = 0; i < num_rays; i++) {
+        glm::vec3 screen_point = glm::vec3(xstep*(float)i, ystep*(float)i, far_plane);
+        Ray r;
+        bool random = true;
+        if(random) {
+            r.origin = glm::sphericalRand(3.0f);
+            r.direction = glm::normalize(glm::sphericalRand(3.0f));
+            r.tmax = 10.0f;
+        } else {
+            r.origin = simulated_camera_pos;
+            r.direction = glm::normalize(screen_point);
+            r.tmax = std::sqrt(glm::dot(screen_point, screen_point));
+        }
+        test_rays.push_back(r);
+    }
+
+    int tree_elapsed = 0;
+    int naive_elapsed = 0;
+    std::chrono::steady_clock::time_point start_time, end_time;
+
+    Intersection isect;
+    int tree_hit_count = 0;
+    start_time = std::chrono::steady_clock::now();
+    for(Ray& r : test_rays) {
+        bool hit = kdtrees[RAYTREE]->RayIntersect(r, &isect);
+        if(hit) {
+            tree_hit_count++;
+        }
+    }
+    end_time = std::chrono::steady_clock::now();
+    tree_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    std::cout << std::format("{:<20}", "KDTree (depth " + std::to_string(tree_depth) + "):") << std::format("{:>5}", tree_elapsed) << " ms " << std::format(std::locale(""), "{:>10L} hits", tree_hit_count) << std::endl;
+
+    int naive_hit_count = 0;
+    float time = 0.0f;
+    start_time = std::chrono::steady_clock::now();
+    for(Ray& r : test_rays) {
+        for(Triangle& t : ray_triangles) {
+            bool hit = t.Intersect(r, &time);
+            if(hit && time > 0.0f) {
+                naive_hit_count++;
+                break;
+            }
+        }
+    }
+    end_time = std::chrono::steady_clock::now();
+    naive_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+
+    std::cout << std::format("{:<20}", "Naive:") << std::format("{:>5}", naive_elapsed) << " ms "<< std::format(std::locale(""), "{:>10L} hits", naive_hit_count) << "\n" << std::endl;
+    active_scene = Scene::RAYSCASTDEMO;
 }
 
 void Application::UpdateCollisionBenchmark() {

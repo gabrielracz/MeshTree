@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 2.6)
 set(PROJ_NAME "mtree")
 project(${PROJ_NAME})
 
-set (CMAKE_CXX_STANDARD 17)
-set(COMPILER_FLAGS "-O3")
+set (CMAKE_CXX_STANDARD 20)
+set(COMPILER_FLAGS "-O3 -march=native -funroll-loops -ftree-vectorize")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Specify project files: header files and source files

@@ -147,7 +147,7 @@ void RenderRay(View& view, Mesh& line_mesh, Shader& line_shader, Ray& ray) {
     view.RenderLine(line_mesh, line_shader, ray.origin, ray.direction * ray.tmax, {1.0, 0.0, 0.0, 1.0});
 }   
 
-std::vector<Triangle> Application::GetMeshTriangles(Mesh& mesh, Transform transform) {
+std::vector<Triangle> GetMeshTriangles(Mesh& mesh, Transform transform) {
     std::vector<Triangle>     triangles;
     std::vector<glm::vec3>    vertices = mesh.GetVertices();
     std::vector<unsigned int> indices = mesh.GetIndices();
@@ -161,7 +161,7 @@ std::vector<Triangle> Application::GetMeshTriangles(Mesh& mesh, Transform transf
     }
     return triangles;
 }
-void Application::CheckControls(KeyMap& keys, View& view, Camera& camera) {
+void CheckControls(KeyMap& keys, View& view, Camera& camera) {
     if(keys[GLFW_KEY_Q]) {
         render_obj = !render_obj;
         keys[GLFW_KEY_Q] = false;

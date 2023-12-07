@@ -124,7 +124,7 @@ struct AABB {
         for(const glm::vec3& v : tri.vertices) {
             bool inside = v.x >= min.x && v.x <= max.x &&
                           v.y >= min.y && v.y <= max.y &&
-                          v.z >= min.z && v.y <= max.y;
+                          v.z >= min.z && v.z <= max.z;
             if(inside) {
                 return true;
             }
