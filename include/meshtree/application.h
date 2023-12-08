@@ -18,7 +18,8 @@ class Application {
         RAYSCASTDEMO,
         COLLISIONDEMO,
         RAYCASTBENCHMARK,
-        COLLISIONBENCHMARK
+        COLLISIONBENCHMARK,
+        COLLISIONNAIVE
     };
 
     enum Trees {
@@ -40,6 +41,7 @@ private:
     void UpdateCollisionDemo();
     void UpdateRaycastBenchmark();
     void UpdateCollisionBenchmark();
+    void UpdateCollisionNaive();
 
     void CheckControls();
     void MouseControls(Camera& camera, MouseMap& mouse_buttons, Mouse& mouse);
@@ -72,6 +74,7 @@ private:
     Ray ray;
     KDTree* kdtrees[NUM_TREES] = {nullptr};
 
+    bool random_rays = false;
     int tree_depth = 6;
     int max_elements = 10;
     bool render_obj = true;

@@ -1,6 +1,7 @@
 #include "application.h"
 #include <bits/chrono.h>
 #include <functional>
+#include "GLFW/glfw3.h"
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/intersect.hpp"
 #include <chrono>
@@ -84,6 +85,8 @@ void Application::Update() {
         case Scene::COLLISIONBENCHMARK:
             UpdateCollisionBenchmark();
             break;
+        case Scene::COLLISIONNAIVE:
+            UpdateCollisionNaive();
         default:
             break;
     }
@@ -121,6 +124,10 @@ void Application::UpdateCollisionDemo() {
 }
 
 void Application::UpdateRaycastBenchmark() {
+
+    view.RenderObj(ray_transform, ray_mesh, mesh_shader, light);
+    view.Update();
+
     int num_rays = 1'000'000;
     std::cout.imbue(std::locale(""));
     std::cout << "Running raycast benchmark with " << num_rays << " rays." << std::endl;
@@ -137,8 +144,7 @@ void Application::UpdateRaycastBenchmark() {
     for(int i = 0; i < num_rays; i++) {
         glm::vec3 screen_point = glm::vec3(xstep*(float)i, ystep*(float)i, far_plane);
         Ray r;
-        bool random = false;
-        if(random) {
+        if(random_rays) {
             r.origin = glm::sphericalRand(3.0f);
             r.direction = glm::normalize(glm::sphericalRand(3.0f));
             r.tmax = 10.0f;
@@ -187,9 +193,69 @@ void Application::UpdateRaycastBenchmark() {
 }
 
 void Application::UpdateCollisionBenchmark() {
+    Transform test_transform;
+    test_transform.SetPosition(glm::ballRand(1.5f));
+    test_transform.SetOrientation(glm::angleAxis(glm::linearRand(-PI/2.0f, PI/2.0f), glm::ballRand(1.0f)));
 
-    
-    std::cout << "Magnificent collision speed!" << std::endl;
+    view.RenderObj(test_transform, col_mesh1, mesh_shader, light);
+    view.RenderObj(col_transform2, col_mesh2, mesh_shader, light);
+    view.Update();
+    std::vector<Triangle> test_triangles = GetMeshTriangles(col_mesh1, test_transform);
+    KDTree test_tree(test_triangles);
+    test_tree.Build(tree_depth, 10);
+
+    int tree_elapsed = 0;
+    int naive_elapsed = 0;
+    bool tree_hit = false;
+    bool naive_hit = false;
+    std::chrono::steady_clock::time_point start_time, end_time;
+
+
+    std::cout.imbue(std::locale(""));
+    std::cout << "Collision benchmark [depth " << tree_depth+3 << " vs. " << tree_depth << "] [triangles: " << col_triangles2.size() << " vs. " << test_triangles.size() << "]" << std::endl;    
+    // accelerated intersection
+    NodeIntersection nodeisect;
+    start_time = std::chrono::steady_clock::now();
+    tree_hit = KDTree::TreeIntersect(test_tree, *kdtrees[COLTREE2], &nodeisect);
+    end_time = std::chrono::steady_clock::now();
+    tree_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    std::cout << std::boolalpha;
+    std::cout << tree_elapsed << " ms hit " << std::to_string(tree_hit) << "\n" << std::endl;
+
+    sleep(2);
+}
+
+void Application::UpdateCollisionNaive() {
+    Transform test_transform;
+    test_transform.SetPosition(glm::ballRand(1.5f));
+    test_transform.SetOrientation(glm::angleAxis(glm::linearRand(-PI/2.0f, PI/2.0f), glm::ballRand(1.0f)));
+
+    view.RenderObj(test_transform, col_mesh1, mesh_shader, light);
+    view.RenderObj(col_transform2, col_mesh2, mesh_shader, light);
+    view.Update();
+    std::vector<Triangle> test_triangles = GetMeshTriangles(col_mesh1, test_transform);
+    KDTree test_tree(test_triangles);
+    test_tree.Build(tree_depth, 10);
+
+    int elapsed = 0;
+    bool hit = false;
+    std::chrono::steady_clock::time_point start_time, end_time;
+    std::cout << "Naive collision search [depth " << tree_depth+3 << " vs. " << tree_depth << "] [triangles: " << col_triangles2.size() << " vs. " << test_triangles.size() << "]" << std::endl;    
+    start_time = std::chrono::steady_clock::now();
+    for(Triangle& t1 : test_triangles) {
+        for(Triangle& t2 : col_triangles2) {
+            if(t1.Intersect(t2)) {
+                hit = true;
+                goto search_exit;
+            }
+        }
+    }
+search_exit:
+    end_time = std::chrono::steady_clock::now();
+    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    std::cout << std::boolalpha;
+    std::cout << elapsed << " ms hit " << std::to_string(hit) << "\n" << std::endl;
+    active_scene = Scene::COLLISIONBENCHMARK;
 }
 
 void Application::RenderKDTree(KDNode* node, int hit_node) {
@@ -232,12 +298,21 @@ void Application::CheckControls() {
         keys[GLFW_KEY_2] = false;
     }
     if(keys[GLFW_KEY_3]) {
+        if(keys[GLFW_KEY_LEFT_SHIFT]) {
+            random_rays = true;
+        } else {
+            random_rays = false;
+        }
         active_scene = Scene::RAYCASTBENCHMARK;
         keys[GLFW_KEY_3] = false;
     }
     if(keys[GLFW_KEY_4]) {
         active_scene = Scene::COLLISIONBENCHMARK;
         keys[GLFW_KEY_4] = false;
+    }
+    if(keys[GLFW_KEY_5]) {
+        active_scene = Scene::COLLISIONNAIVE;
+        keys[GLFW_KEY_5] = false;
     }
 
     if(keys[GLFW_KEY_Q]) {
