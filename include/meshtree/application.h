@@ -63,6 +63,7 @@ private:
 
     std::vector<Triangle> ray_triangles;
     std::vector<Triangle> col_triangles;
+    std::vector<Triangle> col_triangles2;
 
     Transform ray_transform;
     Transform col_transform1;
@@ -74,9 +75,8 @@ private:
     int tree_depth = 6;
     int max_elements = 10;
     bool render_obj = true;
-    // int hit_triangle = -1;
+    int search_depth = KDTree::COMPLETE_SEARCH_DEPTH;
     int draw_edges = 1;
-    // glm::ivec2 hit_nodes = {-1, -1};
     bool closed = false;
 };
 

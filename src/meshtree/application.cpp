@@ -49,11 +49,18 @@ void Application::Init() {
     kdtrees[RAYTREE]->Build(3, 1);
 
     col_mesh1 = Mesh(RESOURCES_DIRECTORY"/dragon.obj");
-    col_transform1.SetPosition({-3.2, 0.0, 0.7});
+    col_transform1.SetPosition({-2.775, -0.5275, 0.37});
+    // col_transform1.SetOrientation(glm::angleAxis(-PI/4.0f, glm::vec3(0.0, 1.0, 0.0)));
     col_triangles = GetMeshTriangles(col_mesh1, col_transform1);
+
+    col_mesh2 = Mesh(RESOURCES_DIRECTORY"/lucy.obj");
+    col_triangles2 = GetMeshTriangles(col_mesh2, col_transform2);
 
     kdtrees[COLTREE1] = new KDTree(col_triangles);
     kdtrees[COLTREE1]->Build(tree_depth, 1);
+
+    kdtrees[COLTREE2] = new KDTree(col_triangles2);
+    kdtrees[COLTREE2]->Build(tree_depth, 1);
     // kdtree_col
     ray.tmax = 10.0f;
 }
@@ -102,14 +109,14 @@ void Application::UpdateRaycastDemo() {
 void Application::UpdateCollisionDemo() {
 
     NodeIntersection nodeinter;
-    KDTree::TreeIntersect(*kdtrees[RAYTREE], *kdtrees[COLTREE1], &nodeinter);
+    KDTree::TreeIntersect(*kdtrees[COLTREE2], *kdtrees[COLTREE1], &nodeinter);
 
     if(render_obj) {
-        view.RenderObj(ray_transform, ray_mesh, mesh_shader, light, nodeinter.triangle_id1);
+        view.RenderObj(col_transform2, col_mesh2, mesh_shader, light, nodeinter.triangle_id1);
         view.RenderObj(col_transform1, col_mesh1, mesh_shader, light, nodeinter.triangle_id2);
     }
 
-    RenderKDTree(&kdtrees[RAYTREE]->GetTree(), nodeinter.node_id1);
+    RenderKDTree(&kdtrees[COLTREE2]->GetTree(), nodeinter.node_id1);
     RenderKDTree(&kdtrees[COLTREE1]->GetTree(), nodeinter.node_id2);
 }
 
@@ -130,7 +137,7 @@ void Application::UpdateRaycastBenchmark() {
     for(int i = 0; i < num_rays; i++) {
         glm::vec3 screen_point = glm::vec3(xstep*(float)i, ystep*(float)i, far_plane);
         Ray r;
-        bool random = true;
+        bool random = false;
         if(random) {
             r.origin = glm::sphericalRand(3.0f);
             r.direction = glm::normalize(glm::sphericalRand(3.0f));
@@ -180,6 +187,8 @@ void Application::UpdateRaycastBenchmark() {
 }
 
 void Application::UpdateCollisionBenchmark() {
+
+    
     std::cout << "Magnificent collision speed!" << std::endl;
 }
 
@@ -302,6 +311,7 @@ void Application::CheckControls() {
         tree_depth++;
         kdtrees[RAYTREE]->Build(tree_depth, max_elements);
         kdtrees[COLTREE1]->Build(tree_depth+3, max_elements);
+        kdtrees[COLTREE2]->Build(tree_depth+3, max_elements);
         keys[GLFW_KEY_T] = false;
     }
     if(keys[GLFW_KEY_R]) {
@@ -309,6 +319,7 @@ void Application::CheckControls() {
         tree_depth = std::max(0, tree_depth);
         kdtrees[RAYTREE]->Build(tree_depth, max_elements);
         kdtrees[COLTREE1]->Build(tree_depth+3, max_elements);
+        kdtrees[COLTREE2]->Build(tree_depth+3, max_elements);
         keys[GLFW_KEY_R] = false;
     }
 }
