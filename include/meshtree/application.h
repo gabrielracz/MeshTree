@@ -31,7 +31,7 @@ class Application {
 
 public:
     Application() = default;
-    void Init();
+    void Init(const std::string& objfile1, const std::string& objfile2, const std::string& objfile3);
     void Update();
     bool Closed() {return view.Closed();}
 

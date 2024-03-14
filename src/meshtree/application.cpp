@@ -1,5 +1,4 @@
 #include "application.h"
-#include <bits/chrono.h>
 #include <functional>
 #include "GLFW/glfw3.h"
 #include "glm/gtc/random.hpp"
@@ -7,6 +6,7 @@
 #include <chrono>
 #include <format>
 #include <locale>
+#include <thread>
 
 
 
@@ -15,7 +15,7 @@ const std::vector<float> line_verts = {
     0.0f, 0.0f, 1.0f
 };
 
-void Application::Init() {
+void Application::Init(const std::string& objfile1, const std::string& objfile2, const std::string& objfile3) {
     srand(1337);
     view.Init("[] MeshTree - Gabriel Racz (c)", 800, 800);
 
@@ -44,17 +44,17 @@ void Application::Init() {
     view.SetScrollHandler(scroll_controls);
 
     // MESHTREE
-    ray_mesh = Mesh(RESOURCES_DIRECTORY"/bunny_full.obj");
+    ray_mesh = Mesh(objfile1);
     ray_triangles = GetMeshTriangles(ray_mesh);
     kdtrees[RAYTREE] = new KDTree(ray_triangles);
     kdtrees[RAYTREE]->Build(3, 1);
 
-    col_mesh1 = Mesh(RESOURCES_DIRECTORY"/dragon.obj");
+    col_mesh1 = Mesh(objfile2);
     col_transform1.SetPosition({-2.775, -0.5275, 0.37});
     // col_transform1.SetOrientation(glm::angleAxis(-PI/4.0f, glm::vec3(0.0, 1.0, 0.0)));
     col_triangles = GetMeshTriangles(col_mesh1, col_transform1);
 
-    col_mesh2 = Mesh(RESOURCES_DIRECTORY"/lucy.obj");
+    col_mesh2 = Mesh(objfile3);
     col_triangles2 = GetMeshTriangles(col_mesh2, col_transform2);
 
     kdtrees[COLTREE1] = new KDTree(col_triangles);
@@ -64,6 +64,24 @@ void Application::Init() {
     kdtrees[COLTREE2]->Build(tree_depth, 1);
     // kdtree_col
     ray.tmax = 10.0f;
+
+    std::cout << "CONTROLS:\n" <<
+        "1 - raycast demo\n" <<
+        "2 - collision demo\n" <<
+        "3 - raycast benchmark (shift toggles randomzied vs. ordered rays)\n" <<
+        "4 - collision benchmark\n" <<
+        "5 - naive collision benchmark\n\n" <<
+
+        "WASD   - move camera\n" <<
+        "ZX     - increase/decrease camera distance\n" <<
+        "MOUSE  - click and drag to rotate camera orbit\n" <<
+        "F      - fire ray\n" <<
+        "ARROWS - rotate camera orbit\n" <<
+        "IJKL   - angle ray\n" <<
+        "TR     - increase/decrease tree depth\n" <<
+        "Q      - toggle object rendering\n" <<
+        "E      - toggle wireframe/fill render mode\n" <<
+        "C      - toggle edge rendering on tree" << std::endl;
 }
 
 
@@ -222,7 +240,7 @@ void Application::UpdateCollisionBenchmark() {
     std::cout << std::boolalpha;
     std::cout << tree_elapsed << " ms hit " << std::to_string(tree_hit) << "\n" << std::endl;
 
-    sleep(2);
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
 void Application::UpdateCollisionNaive() {
@@ -288,6 +306,8 @@ std::vector<Triangle> Application::GetMeshTriangles(Mesh& mesh, Transform transf
 void Application::CheckControls() {
     KeyMap& keys = view.GetKeys();
     Camera& camera = view.GetCamera();
+
+
 
     if(keys[GLFW_KEY_1]) {
         active_scene = Scene::RAYSCASTDEMO;
